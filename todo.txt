@@ -1,0 +1,108 @@
+ COMPLETE FIX LIST - Dark Sky
+🚨 CRITICAL (Game-Breaking / Blocking)
+#	Issue	Location	Details
+1	Records screen not implemented	ui.js:136-137	Shows alert('Records coming soon!') - placeholder
+2	Settings screen not implemented	ui.js:144-145	Shows alert('Settings coming soon!') - no volume/option control
+3	Codex/Collection UI missing	codex.js	Data exists (662 lines) but no UI to view it
+4	Difficulty selection UI missing	difficulty.js	4 difficulty tiers defined but no way to select them
+5	UFO Events integration incomplete	ufoEvents.js	719 lines of lore data with no in-game access
+6	Artifacts system not connected	codex.js:59-100	Diablo-style artifacts defined but not dropping/usable
+🔴 HIGH PRIORITY (Major Issues)
+Code Quality
+#	Issue	Location	Fix
+7	Debug code in production	main.js:61-150	Comment says "remove in production" but still there - ✅ FIXED (uses DEBUG_MODE flag)
+8	Excessive console.log statements	Multiple files (~20+)	Strip or wrap in DEBUG flag - ✅ FIXED (wrapped in DEBUG_MODE checks)
+9	Uses alert() for UI	ui.js:137	Replace with in-game modal - ✅ NO REMAINING ALERTS
+10	Optional chaining on sound	this.game.playSound?.() everywhere	Sound system should be guaranteed
+11	No error boundaries	game.js	Single error kills game loop
+12	Global namespace pollution	All JS files	Everything is global, use modules
+Incomplete Features
+#	Issue	Location	Fix
+13	Weapon evolutions not working	weapons.js:118-170	checkWeaponEvolutions() defined but never called - ✅ FIXED
+14	Run modifiers system incomplete	difficulty.js#L150+	Modifiers like glass_cannon defined but not selectable - ✅ FIXED
+15	Achievement rewards not claimed	achievements.js	Achievements track progress but rewards may not apply
+16	UAP active abilities not working	uapTypes.js	UAPs have active abilities defined but seem unused - ✅ FIXED
+17	AdvancedSaveManager unused	saveSystem.js:79	Class defined but never instantiated
+🟡 MEDIUM PRIORITY (Quality of Life)
+Player Experience
+#	Issue	Location	Fix
+18	No tutorial	-	New players have no guidance
+19	No control rebinding	game.js:127-145	Fixed keybinds only
+20	No pause during level-up	game.js	Game may continue while selecting upgrade - ✅ N/A (upgrades are now instant pickups)
+21	No run history / statistics display	saveSystem.js	Stats tracked but not viewable
+22	30-minute run too long	constants.js:11	No short run mode - ✅ FIXED (10/30/45 min options)
+23	Power-ups given at start	game.js:86-92	Player starts with powerups instead of earning - ✅ FIXED
+24	No confirmation for Quit	ui.js:170	"ABORT MISSION" quits immediately - ✅ FIXED
+UI/UX Issues
+#	Issue	Location	Fix
+25	UAP preview canvas may not render	index.html:77	Canvas needs JS to draw UAP
+26	Health bar labeled "SHLD"	index.html:182	Misleading - it's health, not shield - ✅ FIXED (changed to HULL)
+27	Closure rate is random	ui.js:279	Math.random() * 200 + 100 - fake data - ✅ FIXED (now velocity-based)
+28	No colorblind mode	-	Hard-coded colors
+29	No screen reader support	-	No ARIA labels
+30	Mobile touch controls basic	game.js:315-345	Relative touch only, no virtual buttons
+Balance
+#	Issue	Location	Fix
+31	Phase 1 may feel slow	spawner.js:19-35	0-5 minutes is tutorial pacing
+32	XP curve is linear	constants.js:16	XP_GROWTH_RATE: 1.25 - consider S-curve
+33	Time scaling uncapped for damage	enemy.js:27	HP capped at 50% but damage may not be - ✅ FIXED (damage now capped at 50% too)
+🟢 LOW PRIORITY (Polish / Tech Debt)
+Performance
+#	Issue	Location	Fix
+34	No spatial partitioning for collisions	game.js	SPATIAL_GRID_SIZE defined but unclear usage
+35	Individual draw calls	particles.js	Could batch similar particles
+36	Object creation in hot paths	Various	Pre-allocate vectors/objects
+37	No frame rate limiter	game.js	requestAnimationFrame only
+Code Architecture
+#	Issue	Location	Fix
+38	game.js is 2372 lines	game.js	Split into smaller modules
+39	player.js is 1579 lines	player.js	Extract weapon/ability logic
+40	ui.js is 1760 lines	ui.js	Split by screen/component
+41	constants.js is 1179 lines	constants.js	Split into weapons.config, enemies.config, etc.
+42	No TypeScript	All files	Type safety would catch bugs
+43	No ES modules	All files	Uses script tags, global scope
+44	No build process	index.html	Raw JS, cache busting via ?v=
+45	No minification	-	Could reduce load time
+46	No source maps	-	Hard to debug in production
+47	No unit tests	-	Game logic untested
+Miscellaneous
+#	Issue	Location	Fix
+48	Script version inconsistencies	index.html:401-420	Mixed v=19, v=20, v=21 - ✅ FIXED (all normalized to v=22)
+49	Missing theme-music.wav handling	sound.js:47-54	Fallback exists but file may be missing
+50	UAP classification map incomplete	ui.js:306-313	Only 5 UAPs mapped, others show "UAP/UK" - ✅ FIXED (all 10 UAPs mapped)
+51	Legacy abilities code	constants.js:166-200	Comment says "keeping for backwards compatibility"
+52	Duplicate save systems	utils.js + saveSystem.js	Two different save implementations
+📋 QUICK REFERENCE BY FILE
+File	Issues
+ui.js	#1, #2, #8, #9, #24, #27
+main.js	#7, #8
+game.js	#10, #11, #20, #23, #38
+player.js	#16, #39
+constants.js	#22, #32, #41, #51
+weapons.js	#13
+difficulty.js	#4, #14
+codex.js	#3, #6
+ufoEvents.js	#5
+achievements.js	#15
+saveSystem.js	#17, #21, #52
+sound.js	#49
+spawner.js	#31
+enemy.js	#33
+index.html	#25, #26, #48
+🎯 RECOMMENDED FIX ORDER
+Week 1: Critical UI
+Implement Settings screen (volume, screen shake, etc.)
+Implement Records screen (run history, stats)
+Add difficulty selection to main menu
+Week 2: Missing Systems
+Wire up weapon evolution system
+Connect Codex/Collection UI
+Implement achievement reward claiming
+Week 3: Polish
+Remove debug code or add build process
+Add tutorial overlay
+Fix "SHLD" label, fake closure rate
+Week 4+: Architecture
+Split large files into modules
+Add TypeScript
+Implement proper build pipeline

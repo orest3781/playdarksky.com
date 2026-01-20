@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Sky - They have always been here</title>
+    <link rel="icon" type="image/x-icon" href="Assets/sprites/favicon.ico">
+    <link rel="stylesheet" href="css/style.css?v=35">
+    <!-- Military-style font -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Skip to main content link for keyboard/screen reader users -->
+    <a href="#main-menu" class="skip-link" tabindex="0">Skip to main content</a>
+    
+    <!-- Animated Starfield Background -->
+    <canvas id="starfield-canvas"></canvas>
+    
+    <!-- Atmospheric fog overlay -->
+    <div id="fog-overlay"></div>
+    
+    <!-- Scan lines overlay -->
+    <div id="scanlines-overlay"></div>
+    
+    <!-- Main Menu -->
+    <div id="main-menu" class="screen active" role="main" aria-label="Main Menu">
+        <!-- Sound toggle in top right -->
+        <div class="sound-toggle" id="sound-toggle" title="Toggle Sound">
+            <span class="sound-icon" id="sound-icon">🔊</span>
+            <span class="sound-label">AUDIO</span>
+        </div>
+        
+        <div class="menu-content">
+            <div class="title-container">
+                <h1 class="game-title" data-text="DARK SKY">DARK SKY</h1>
+                <p class="tagline" aria-label="Game tagline">"They have always been here."</p>
+            </div>
+            
+            <nav class="menu-buttons" role="navigation" aria-label="Main menu navigation">
+                <button id="btn-play" class="menu-btn primary" aria-label="Begin evasion attempt">
+                    <span class="btn-icon">▶</span> LAUNCH
+                </button>
+                <button id="btn-settings" class="menu-btn secondary" aria-label="Settings and options">
+                    <span class="btn-icon">⚙</span> OPTIONS
+                </button>
+            </nav>
+        </div>
+        
+        <!-- Mission Setup Modal - Streamlined Single-Page Design -->
+        <div id="difficulty-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="difficulty-modal-title">
+            <div class="modal-content mission-setup-modal">
+                <h2 class="modal-title" id="difficulty-modal-title">MISSION BRIEFING</h2>
+                
+                <!-- Difficulty Selection - Hero Cards -->
+                <div class="difficulty-cards" id="difficulty-grid" role="radiogroup" aria-label="Select difficulty">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <!-- Duration Row -->
+                <div class="duration-row">
+                    <span class="duration-label">DURATION</span>
+                    <div class="duration-pills" id="duration-options" role="radiogroup">
+                        <button class="duration-pill selected" data-duration="short" role="radio">10 MIN</button>
+                        <button class="duration-pill" data-duration="normal" role="radio">30 MIN</button>
+                        <button class="duration-pill" data-duration="extended" role="radio">45 MIN</button>
+                    </div>
+                </div>
+                
+                <!-- Ultimate Selection Row -->
+                <div class="ultimate-row">
+                    <span class="ultimate-label">ULTIMATE [R]</span>
+                    <div class="ultimate-selector" id="ultimate-selector">
+                        <button class="ultimate-nav" id="ultimate-prev">‹</button>
+                        <div class="ultimate-display" id="ultimate-display">
+                            <span class="ultimate-icon" id="ultimate-icon">💧</span>
+                            <div class="ultimate-info">
+                                <span class="ultimate-name" id="ultimate-name">THE DROPLET</span>
+                                <span class="ultimate-source" id="ultimate-source">Three Body Problem</span>
+                            </div>
+                        </div>
+                        <button class="ultimate-nav" id="ultimate-next">›</button>
+                    </div>
+                    <p class="ultimate-desc" id="ultimate-desc">Transform into the indestructible Trisolaran probe</p>
+                </div>
+                
+                <!-- Modifiers - Hidden until implemented -->
+                <div class="modifiers-row" style="display: none;">
+                    <div class="modifiers-row-header">
+                        <span class="modifiers-label">MODIFIERS</span>
+                        <span class="modifiers-count"><span id="modifier-count">0</span>/3</span>
+                    </div>
+                    <div class="modifiers-chips" id="modifiers-grid" role="group">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="mission-actions">
+                    <button id="btn-start-mission" class="btn-launch">▶ LAUNCH MISSION</button>
+                    <button id="btn-cancel-difficulty" class="btn-back">BACK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hangar - Ship Selection -->
+    <div id="hangar-screen" class="screen" role="region" aria-label="Hangar - UAP Selection">
+        <div class="screen-header">
+            <button class="back-btn" aria-label="Return to main menu">← BACK</button>
+            <h2>HANGAR</h2>
+        </div>
+        
+        <div class="hangar-layout">
+            <!-- Large Central Preview -->
+            <div class="hangar-preview">
+                <div class="hangar-preview-glow"></div>
+                <canvas id="uap-preview-canvas" width="280" height="280"></canvas>
+                <div class="hangar-preview-label" id="uap-name">TIC TAC</div>
+            </div>
+            
+            <!-- Ship Info Panel -->
+            <div class="hangar-info">
+                <p class="hangar-description" id="uap-description"></p>
+                
+                <div class="hangar-stats" id="uap-stats">
+                    <!-- Stats populated by JS -->
+                </div>
+                
+                <div class="hangar-ability" id="uap-ability">
+                    <div class="ability-key">R</div>
+                    <div class="ability-info">
+                        <span class="ability-name" id="uap-ability-name">SPECIAL</span>
+                        <span class="ability-desc" id="uap-ability-text">Standard craft</span>
+                    </div>
+                </div>
+                
+                <button id="btn-select-uap" class="menu-btn primary">DEPLOY</button>
+            </div>
+            
+            <!-- Ship Selector Strip -->
+            <div class="hangar-selector">
+                <button class="hangar-arrow" id="carousel-prev">‹</button>
+                <div class="hangar-ships" id="carousel-track">
+                    <!-- Ship cards populated by JS -->
+                </div>
+                <button class="hangar-arrow" id="carousel-next">›</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upgrades Screen -->
+    <div id="upgrades-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn">← BACK</button>
+            <h2>RESEARCH LAB</h2>
+            <div class="currency-display">
+                <span>⚡</span>
+                <span id="upgrade-currency">0</span>
+            </div>
+        </div>
+        <div class="upgrades-container">
+            <div class="upgrade-tree" id="upgrade-tree">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Records Screen -->
+    <div id="records-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn">← BACK</button>
+            <h2>MISSION RECORDS</h2>
+        </div>
+        <div class="records-container">
+            <!-- Lifetime Stats -->
+            <div class="records-section">
+                <h3 class="records-section-title">◈ LIFETIME STATISTICS ◈</h3>
+                <div class="records-grid">
+                    <div class="record-item">
+                        <span class="record-icon">⏱️</span>
+                        <span class="record-label">Total Play Time</span>
+                        <span class="record-value" id="rec-total-time">0:00:00</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-icon">🎯</span>
+                        <span class="record-label">Missions Completed</span>
+                        <span class="record-value" id="rec-runs-completed">0</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-icon">�</span>
+                        <span class="record-label">Total Kills</span>
+                        <span class="record-value" id="rec-total-kills">0</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-icon">⭐</span>
+                        <span class="record-label">Elites Defeated</span>
+                        <span class="record-value" id="rec-elites">0</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-icon">👑</span>
+                        <span class="record-label">Bosses Defeated</span>
+                        <span class="record-value" id="rec-bosses">0</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-icon">💥</span>
+                        <span class="record-label">Total Damage</span>
+                        <span class="record-value" id="rec-damage">0</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-icon">✦</span>
+                        <span class="record-label">XP Earned</span>
+                        <span class="record-value" id="rec-xp">0</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-icon">📦</span>
+                        <span class="record-label">Pickups Collected</span>
+                        <span class="record-value" id="rec-pickups">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Best Runs -->
+            <div class="records-section">
+                <h3 class="records-section-title">◈ BEST RUNS ◈</h3>
+                <div class="best-runs-grid">
+                    <div class="best-run-card">
+                        <div class="best-run-icon">⏱️</div>
+                        <div class="best-run-title">Longest Survival</div>
+                        <div class="best-run-value" id="best-survival">--:--</div>
+                        <div class="best-run-date" id="best-survival-date">-</div>
+                    </div>
+                    <div class="best-run-card">
+                        <div class="best-run-icon">📈</div>
+                        <div class="best-run-title">Highest Level</div>
+                        <div class="best-run-value" id="best-level">0</div>
+                        <div class="best-run-date" id="best-level-date">-</div>
+                    </div>
+                    <div class="best-run-card">
+                        <div class="best-run-icon">💀</div>
+                        <div class="best-run-title">Most Kills</div>
+                        <div class="best-run-value" id="best-kills">0</div>
+                        <div class="best-run-date" id="best-kills-date">-</div>
+                    </div>
+                    <div class="best-run-card">
+                        <div class="best-run-icon">💥</div>
+                        <div class="best-run-title">Highest Damage</div>
+                        <div class="best-run-value" id="best-damage">0</div>
+                        <div class="best-run-date" id="best-damage-date">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Options Screen (Tabbed: Settings, Records, How to Play) -->
+    <div id="settings-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn">← BACK</button>
+            <h2>OPTIONS</h2>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="options-tabs">
+            <button class="options-tab active" data-tab="settings">SETTINGS</button>
+            <button class="options-tab" data-tab="records">RECORDS</button>
+            <button class="options-tab" data-tab="howtoplay">HOW TO PLAY</button>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="options-tab-content active" id="tab-settings">
+        <div class="settings-container">
+            <!-- Audio Settings -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">� AUDIO</h3>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label class="setting-label">Master Volume</label>
+                        <div class="setting-control">
+                            <input type="range" id="setting-master-volume" class="setting-slider" min="0" max="100" value="100">
+                            <span class="setting-value" id="master-volume-value">100%</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">SFX Volume</label>
+                        <div class="setting-control">
+                            <input type="range" id="setting-sfx-volume" class="setting-slider" min="0" max="100" value="80">
+                            <span class="setting-value" id="sfx-volume-value">80%</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">Music Volume</label>
+                        <div class="setting-control">
+                            <input type="range" id="setting-music-volume" class="setting-slider" min="0" max="100" value="60">
+                            <span class="setting-value" id="music-volume-value">60%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gameplay Settings -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">🎮 GAMEPLAY</h3>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label class="setting-label">Screen Shake</label>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="setting-screen-shake" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">Damage Numbers</label>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="setting-damage-numbers" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">Show Minimap</label>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="setting-minimap" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accessibility Settings -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">♿ ACCESSIBILITY</h3>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label class="setting-label">Color Mode</label>
+                        <div class="setting-control">
+                            <select id="setting-color-mode" class="setting-select" aria-label="Colorblind accessibility mode">
+                                <option value="normal">Normal</option>
+                                <option value="deuteranopia">Deuteranopia (Green-Blind)</option>
+                                <option value="protanopia">Protanopia (Red-Blind)</option>
+                                <option value="tritanopia">Tritanopia (Blue-Blind)</option>
+                                <option value="highContrast">High Contrast</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">Enemy Shape Indicators</label>
+                        <div class="setting-control">
+                            <label class="switch">
+                                <input type="checkbox" id="setting-shape-indicators" aria-label="Show shape indicators on enemies">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls / Keybindings -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">🎮 CONTROLS</h3>
+                <div class="settings-group keybindings-group" id="keybindings-container">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label"></label>
+                    <div class="setting-control">
+                        <button id="btn-reset-keybindings" class="menu-btn small" aria-label="Reset all keybindings to defaults">RESET TO DEFAULTS</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graphics Settings -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">✨ GRAPHICS</h3>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label class="setting-label">Particle Quality</label>
+                        <div class="setting-control">
+                            <select id="setting-particle-quality" class="setting-select">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high" selected>High</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Actions -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">💾 DATA</h3>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label class="setting-label">Reset Progress</label>
+                        <div class="setting-control">
+                            <button id="btn-reset-save" class="menu-btn danger small">RESET ALL</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        
+        <!-- Records Tab -->
+        <div class="options-tab-content" id="tab-records">
+            <div class="records-container">
+                <!-- Lifetime Stats -->
+                <div class="records-section">
+                    <h3 class="records-section-title">LIFETIME STATISTICS</h3>
+                    <div class="records-grid">
+                        <div class="record-item">
+                            <span class="record-label">Total Play Time</span>
+                            <span class="record-value" id="rec-total-time">0:00:00</span>
+                        </div>
+                        <div class="record-item">
+                            <span class="record-label">Missions Completed</span>
+                            <span class="record-value" id="rec-runs-completed">0</span>
+                        </div>
+                        <div class="record-item">
+                            <span class="record-label">Total Kills</span>
+                            <span class="record-value" id="rec-total-kills">0</span>
+                        </div>
+                        <div class="record-item">
+                            <span class="record-label">Elites Defeated</span>
+                            <span class="record-value" id="rec-elites">0</span>
+                        </div>
+                        <div class="record-item">
+                            <span class="record-label">Bosses Defeated</span>
+                            <span class="record-value" id="rec-bosses">0</span>
+                        </div>
+                        <div class="record-item">
+                            <span class="record-label">Total Damage</span>
+                            <span class="record-value" id="rec-damage">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Best Runs -->
+                <div class="records-section">
+                    <h3 class="records-section-title">PERSONAL BESTS</h3>
+                    <div class="best-runs-grid">
+                        <div class="best-run-card">
+                            <div class="best-run-title">Longest Run</div>
+                            <div class="best-run-value" id="best-survival">--:--</div>
+                        </div>
+                        <div class="best-run-card">
+                            <div class="best-run-title">Highest Level</div>
+                            <div class="best-run-value" id="best-level">0</div>
+                        </div>
+                        <div class="best-run-card">
+                            <div class="best-run-title">Most Kills</div>
+                            <div class="best-run-value" id="best-kills">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- How to Play Tab -->
+        <div class="options-tab-content" id="tab-howtoplay">
+            <div class="howtoplay-container">
+                <div class="howtoplay-section">
+                    <h3>OBJECTIVE</h3>
+                    <p>You are a UFO being hunted by military forces. Evade capture for 30 minutes to escape. Collect salvage to level up and enhance your defensive systems.</p>
+                </div>
+                
+                <div class="howtoplay-section">
+                    <h3>CONTROLS</h3>
+                    <div class="controls-grid">
+                        <div class="control-item"><span class="key">WASD</span> Move</div>
+                        <div class="control-item"><span class="key">SPACE</span> Dash</div>
+                        <div class="control-item"><span class="key">Q</span> Overdrive</div>
+                        <div class="control-item"><span class="key">E</span> Shield</div>
+                        <div class="control-item"><span class="key">F</span> Chrono Burst</div>
+                        <div class="control-item"><span class="key">R</span> Ultimate</div>
+                        <div class="control-item"><span class="key">ESC</span> Pause</div>
+                    </div>
+                </div>
+                
+                <div class="howtoplay-section">
+                    <h3>TIPS</h3>
+                    <ul class="tips-list">
+                        <li>Defensive systems fire automatically - focus on evasion</li>
+                        <li>Collect green salvage orbs to upgrade faster</li>
+                        <li>Abilities (Q/E/F/R) must be found as drops</li>
+                        <li>Visit the HANGAR to unlock new craft</li>
+                        <li>Buy permanent UPGRADES between escape attempts</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Codex Screen -->
+    <div id="codex-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn">← BACK</button>
+            <h2>CODEX - COLLECTION</h2>
+            <div class="codex-progress">
+                <span id="codex-progress-text">0/0</span>
+            </div>
+        </div>
+        <div class="codex-container">
+            <!-- Category Tabs -->
+            <div class="codex-tabs" id="codex-tabs">
+                <!-- Populated by JS -->
+            </div>
+            
+            <!-- Collection Grid -->
+            <div class="codex-content">
+                <div class="codex-grid" id="codex-grid">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <!-- Detail Panel -->
+                <div class="codex-detail-panel" id="codex-detail">
+                    <div class="codex-detail-empty">
+                        <span class="codex-detail-icon">📖</span>
+                        <p>Select an entry to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <!-- FLIR Camera Overlay -->
+        <div id="flir-overlay">
+            <!-- Minimal Top Bar - Time & Phase Only -->
+            <div id="top-status-bar">
+                <div class="top-status-left">
+                    <span class="status-value phase-text" id="flir-phase">PHASE 1</span>
+                </div>
+                <div class="top-status-center">
+                    <span class="mission-timer" id="flir-time">00:00</span>
+                </div>
+                <div class="top-status-right">
+                    <span class="status-label">PURSUING</span>
+                    <span class="status-value" id="track-count">0</span>
+                </div>
+            </div>
+            
+            <!-- Phase Transition Warning -->
+            <div id="phase-warning" class="phase-warning hidden">
+                <div class="phase-warning-glow"></div>
+                <div class="phase-warning-content">
+                    <div class="phase-warning-icon">⚠</div>
+                    <div class="phase-warning-text">
+                        <div class="phase-warning-label">THEY ARE ESCALATING</div>
+                        <div class="phase-warning-name" id="phase-warning-name">ENGAGEMENT</div>
+                        <div class="phase-warning-countdown" id="phase-warning-countdown">IN 0:30</div>
+                    </div>
+                </div>
+                <div class="phase-warning-bar">
+                    <div class="phase-warning-fill" id="phase-warning-fill"></div>
+                </div>
+            </div>
+            
+            <!-- Center Reticle -->
+            <div id="flir-reticle">
+                <div class="reticle-line reticle-top"></div>
+                <div class="reticle-line reticle-bottom"></div>
+                <div class="reticle-line reticle-left"></div>
+                <div class="reticle-line reticle-right"></div>
+                <div class="reticle-corner corner-tl"></div>
+                <div class="reticle-corner corner-tr"></div>
+                <div class="reticle-corner corner-bl"></div>
+                <div class="reticle-corner corner-br"></div>
+                <div class="reticle-center"></div>
+            </div>
+            
+            <!-- ====== FUTURISTIC BOTTOM DASHBOARD ====== -->
+            <div id="hud-dashboard">
+                <!-- Active Drops (floating above dashboard) -->
+                <div id="active-drops" class="drops-list">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <!-- Main Dashboard Frame -->
+                <div class="dashboard-frame">
+                    <!-- Left Wing - Health & Energy -->
+                    <div class="dashboard-wing wing-left">
+                        <div class="wing-bars">
+                            <div class="hud-bar health-bar">
+                                <div class="bar-icon">◈</div>
+                                <div class="bar-container">
+                                    <div class="bar-fill health-fill" id="dash-health-fill"></div>
+                                    <span class="bar-text" id="dash-health-value">100</span>
+                                </div>
+                            </div>
+                            <div class="hud-bar energy-bar">
+                                <div class="bar-icon">⚡</div>
+                                <div class="bar-container">
+                                    <div class="bar-fill energy-fill" id="dash-energy-fill"></div>
+                                    <span class="bar-text" id="dash-energy-value">100</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Center Module - Weapons & Abilities -->
+                    <div class="dashboard-center">
+                        <!-- Weapon Slots -->
+                        <div class="weapons-row">
+                            <div class="weapon-slots" id="weapon-slots">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                        
+                        <!-- Ability Slots -->
+                        <div class="abilities-row">
+                            <div id="action-bar">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                        
+                        <!-- XP Bar (spans full center width) -->
+                        <div class="xp-row">
+                            <span class="xp-level" id="dash-level">LV 1</span>
+                            <div class="xp-bar-container">
+                                <div class="xp-bar-fill" id="dash-xp-fill"></div>
+                            </div>
+                            <span class="xp-percent" id="dash-xp-percent">0%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Wing - Stats -->
+                    <div class="dashboard-wing wing-right">
+                        <div class="wing-stats">
+                            <div class="stat-row">
+                                <span class="stat-label">DOWNED</span>
+                                <span class="stat-value" id="dash-kills">0</span>
+                            </div>
+                            <div class="stat-row gold">
+                                <span class="stat-label">SALVAGE</span>
+                                <span class="stat-value" id="dash-gold">0</span>
+                            </div>
+                            <div class="stat-row sites">
+                                <span class="stat-label">RADAR</span>
+                                <span class="stat-value" id="dash-ships">0/0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Warning Banner -->
+                <div id="hud-warning-area">
+                    <div class="hud-warning-text" id="hud-warning-text"></div>
+                </div>
+            </div>
+            
+            <!-- Hidden elements for JS compatibility -->
+            <div style="display:none;">
+                <span id="stat-elite-kills">0</span>
+                <span id="stat-boss-kills">0</span>
+                <span id="stat-dps">0</span>
+                <span id="stat-xp-collected">0</span>
+                <span id="stat-kills">0</span>
+                <span id="stat-gold">0</span>
+                <span id="stat-damage-dealt">0</span>
+                <span id="sites-remaining">0/0</span>
+                <span id="neutralized-count">0</span>
+                <span id="bottom-health-fill"></span>
+                <span id="bottom-health-value">100</span>
+                <span id="bottom-xp-level">1</span>
+                <span id="bottom-xp-fill"></span>
+                <span id="flir-health-fill"></span>
+                <span id="flir-health-value">100</span>
+                <span id="flir-boost-fill"></span>
+                <span id="flir-boost-value">100</span>
+                <span id="flir-level">1</span>
+                <span id="flir-xp-display">0</span>
+                <span id="flir-next-phase"></span>
+                <span id="flir-coords"></span>
+                <span id="flir-alt"></span>
+                <span id="flir-heading"></span>
+                <span id="flir-bearing"></span>
+                <span id="flir-mode"></span>
+                <span id="flir-zoom"></span>
+                <span id="flir-weapons"></span>
+                <span id="flir-range"></span>
+                <span id="flir-closure"></span>
+                <span id="flir-classification"></span>
+                <span id="rank-dps">-</span>
+                <span id="rank-damage">-</span>
+                <span id="rank-kills">-</span>
+                <span id="rank-elite">-</span>
+                <span id="rank-boss">-</span>
+                <span id="rank-xp">-</span>
+                <span id="pilot-rank-progress"></span>
+                <span id="pilot-rank-badge">👁️</span>
+                <span id="pilot-rank-name">OBSERVER</span>
+                <span id="pilot-rank-fill"></span>
+                <span id="bottom-xp-value">0%</span>
+                <div id="milestone-ladder"></div>
+                <div id="drops-tracker"><div id="drops-list"></div></div>
+            </div>
+            
+            <!-- Damage Flash Overlay -->
+            <div id="damage-flash" class="damage-flash"></div>
+            
+            <!-- Drops Tracker moved to bottom-info-panel -->
+            
+            <!-- Low Health Warning Overlay -->
+            <div id="low-health-overlay" class="low-health-overlay"></div>
+            
+            <!-- Critical Health Vignette (screen edge red glow) -->
+            <div id="health-critical-vignette" class="health-critical-vignette"></div>
+            
+            <!-- Edge Vignette/Scan Lines -->
+            <div class="flir-vignette"></div>
+            <div class="flir-scanlines"></div>
+            
+            <!-- Recording Indicator -->
+            <div class="flir-record">
+                <span class="record-dot"></span>
+                <span>REC</span>
+            </div>
+        </div>
+
+        <!-- Main Game Canvas -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Minimap (styled as radar) -->
+        <div id="minimap-container">
+            <canvas id="minimap"></canvas>
+            <div class="radar-direction north">N</div>
+            <div class="radar-direction south">S</div>
+            <div class="radar-direction east">E</div>
+            <div class="radar-direction west">W</div>
+            <div class="radar-label">RADAR</div>
+        </div>
+
+        <!-- Pause Menu -->
+        <div id="pause-menu" class="overlay hidden">
+            <div class="overlay-content">
+                <h2>MISSION PAUSED</h2>
+                <button id="btn-resume" class="menu-btn primary">RESUME</button>
+                <button id="btn-quit" class="menu-btn danger">SELF-DESTRUCT</button>
+            </div>
+        </div>
+
+        <!-- Tutorial Overlay -->
+        <div id="tutorial-overlay" class="tutorial-overlay hidden">
+            <div class="tutorial-content">
+                <div class="tutorial-header">
+                    <span class="tutorial-icon">📡</span>
+                    <h2>MISSION BRIEFING</h2>
+                </div>
+                <div class="tutorial-steps">
+                    <div class="tutorial-step">
+                        <div class="tutorial-key">WASD / ↑↓←→</div>
+                        <div class="tutorial-desc">Navigate your UAP</div>
+                    </div>
+                    <div class="tutorial-step">
+                        <div class="tutorial-key">SPACE</div>
+                        <div class="tutorial-desc">Boost (uses energy)</div>
+                    </div>
+                    <div class="tutorial-step">
+                        <div class="tutorial-key">SHIFT</div>
+                        <div class="tutorial-desc">Phase shift dodge</div>
+                    </div>
+                    <div class="tutorial-step">
+                        <div class="tutorial-key">1-5</div>
+                        <div class="tutorial-desc">Activate abilities</div>
+                    </div>
+                    <div class="tutorial-step">
+                        <div class="tutorial-key">Q E F R</div>
+                        <div class="tutorial-desc">Use power-ups</div>
+                    </div>
+                    <div class="tutorial-step">
+                        <div class="tutorial-key">ESC</div>
+                        <div class="tutorial-desc">Pause mission</div>
+                    </div>
+                </div>
+                <div class="tutorial-tips">
+                    <p>🎯 <strong>Weapons fire automatically</strong> - focus on positioning!</p>
+                    <p>⬡ <strong>Collect XP orbs</strong> to level up and gain upgrades</p>
+                    <p>📦 <strong>Grab crates</strong> for weapons, passives, and power-ups</p>
+                    <p>📡 <strong>Destroy radar sites</strong> to reduce enemy spawns</p>
+                </div>
+                <div class="tutorial-footer">
+                    <button id="btn-tutorial-dismiss" class="menu-btn primary">BEGIN MISSION</button>
+                    <label class="tutorial-checkbox">
+                        <input type="checkbox" id="tutorial-dont-show">
+                        <span>Don't show again</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level Up Cards (floating on game field) - DEPRECATED -->
+        <div id="levelup-container" class="hidden">
+            <div class="levelup-header">
+                <span class="levelup-flash">▲</span>
+                <span>SYSTEMS ENHANCED</span>
+                <span class="levelup-flash">▲</span>
+            </div>
+            <div class="upgrade-choices" id="upgrade-choices">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        
+        <!-- Salvage Upgrade Overlay (non-pausing) -->
+        <div id="salvage-upgrade-overlay" class="hidden">
+            <div class="salvage-upgrade-panel">
+                <div class="salvage-upgrade-header">
+                    <span class="salvage-header-icon">🔧</span>
+                    <span class="salvage-header-text">SALVAGE FOR YOUR SYSTEMS</span>
+                    <span class="salvage-header-timer" id="salvage-timer">20s</span>
+                </div>
+                <div class="salvage-upgrade-choices" id="salvage-choices">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="salvage-upgrade-footer">
+                    <div class="salvage-reroll-section">
+                        <button id="salvage-reroll-btn" class="salvage-reroll-btn">
+                            <span class="reroll-key">[R]</span>
+                            <span class="reroll-text">REROLL</span>
+                            <span class="reroll-cost" id="salvage-reroll-cost">10 ⚡</span>
+                        </button>
+                    </div>
+                    <div class="salvage-info">
+                        <span class="salvage-label">SALVAGE:</span>
+                        <span class="salvage-value" id="salvage-current">0 ⚡</span>
+                    </div>
+                </div>
+                <div class="salvage-hint">Press 1/2/3 or click to select • ESC to skip</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen">
+        <div class="gameover-content">
+            <h1 id="gameover-title">CAPTURED</h1>
+            <p id="gameover-reason" class="gameover-reason">Your craft was shot down</p>
+            <div class="gameover-stats">
+                <div class="go-stat">
+                    <span class="go-label">Evasion Time</span>
+                    <span class="go-value" id="go-time">00:00</span>
+                </div>
+                <div class="go-stat">
+                    <span class="go-label">Hostiles Neutralized</span>
+                    <span class="go-value" id="go-kills">0</span>
+                </div>
+                <div class="go-stat">
+                    <span class="go-label">Level Reached</span>
+                    <span class="go-value" id="go-level">1</span>
+                </div>
+                <div class="go-stat highlight">
+                    <span class="go-label">Energy Cores Earned</span>
+                    <span class="go-value" id="go-currency">+0</span>
+                </div>
+            </div>
+            <div class="gameover-buttons">
+                <button id="btn-retry" class="menu-btn primary">↻ RELAUNCH</button>
+                <button id="btn-menu" class="menu-btn">← MAIN MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen">
+        <div class="loading-content">
+            <div class="loading-uap"></div>
+            <p>INITIALIZING SYSTEMS...</p>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Data Systems (load first) -->
+    <script src="js/data/ufoEvents.js?v=29"></script>
+    <script src="js/data/codex.js?v=29"></script>
+    <script src="js/data/achievements.js?v=29"></script>
+    <script src="js/data/difficulty.js?v=29"></script>
+    <script src="js/data/saveSystem.js?v=29"></script>
+    <script src="js/data/uapTypes.js?v=29"></script>
+    <script src="js/data/upgrades.js?v=29"></script>
+    
+    <!-- Core Game -->
+    <script src="js/utils.js?v=29"></script>
+    <script src="js/constants.js?v=33"></script>
+    <script src="js/particles.js?v=29"></script>
+    <script src="js/effects.js?v=29"></script>
+    <script src="js/sound.js?v=29"></script>
+    <script src="js/entities/player.js?v=35"></script>
+    <script src="js/entities/enemy.js?v=29"></script>
+    <script src="js/entities/projectile.js?v=29"></script>
+    <script src="js/entities/pickup.js?v=29"></script>
+    <script src="js/entities/radarSite.js?v=29"></script>
+    <script src="js/weapons.js?v=29"></script>
+    <script src="js/spawner.js?v=30"></script>
+    <script src="js/ui.js?v=37"></script>
+    <script src="js/game.js?v=33"></script>
+    <script src="js/main.js?v=30"></script>
+</body>
+</html>
+4
