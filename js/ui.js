@@ -391,15 +391,6 @@ class UI {
             }
         });
         
-        // OAuth buttons
-        document.querySelectorAll('.btn-oauth').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const provider = btn.dataset.provider;
-                this.game.playSound?.('click');
-                await window.supabaseService?.signInWithOAuth(provider);
-            });
-        });
-        
         // Logout
         logoutBtn?.addEventListener('click', async () => {
             this.game.playSound?.('click');
