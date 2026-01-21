@@ -1,5 +1,5 @@
 // =====================================================
-// SOUND MANAGER - Howler.js + Web Audio Synthesis
+// SOUND MANAGER - External Audio Files + Web Audio Synthesis Fallback
 // =====================================================
 
 class SoundManager {
@@ -14,6 +14,9 @@ class SoundManager {
         this.audioContext = null;
         this.musicBuffer = null;
         this.musicLoaded = false;
+        
+        // Track which sounds have external files loaded
+        this.externalSounds = new Set();
         
         // Track playing instances for pooling
         this.activeSounds = new Map();
@@ -47,6 +50,72 @@ class SoundManager {
             default: 50
         };
         
+        // =====================================================
+        // EXTERNAL AUDIO FILE MAPPINGS
+        // Empty = use synthesized sounds (default)
+        // Uncomment lines to enable external audio files
+        // =====================================================
+        this.audioFiles = {
+            // === WEAPONS ===
+            // shoot: 'sci-fi-sfx/shoot_01.ogg',
+            // shootHeavy: 'sci-fi-sfx/shoot_02.ogg',
+            // plasma: 'sci-fi-sfx/retro_laser_01.ogg',
+            // missile: 'sci-fi-sfx/rocket_01.ogg',
+            // railgun: 'sci-fi-sfx/retro_laser_02.ogg',
+            
+            // === EXPLOSIONS ===
+            // explosion: 'sci-fi-sfx/explosion_01.ogg',
+            // explosionSmall: 'sci-fi-sfx/retro_explosion.ogg',
+            // explosionBig: 'sci-fi-sfx/explosion_02.ogg',
+            
+            // === PICKUPS ===
+            // pickup: 'sci-fi-sfx/beep_01.ogg',
+            // pickupXP: 'sci-fi-sfx/retro_beep_01.ogg',
+            // pickupHealth: 'sci-fi-sfx/retro_beep_03.ogg',
+            // pickupPowerup: 'sci-fi-sfx/retro_beep_05.ogg',
+            
+            // === PLAYER ===
+            // hit: 'sci-fi-sfx/misc_03.ogg',
+            // death: 'sci-fi-sfx/weird_01.ogg',
+            // heal: 'sci-fi-sfx/retro_beep_04.ogg',
+            // shield: 'sci-fi-sfx/misc_05.ogg',
+            // boost: 'sci-fi-sfx/misc_06.ogg',
+            
+            // === LEVEL/PROGRESS ===
+            // levelUp: 'sci-fi-sfx/retro_beep_06.ogg',
+            // upgrade: 'sci-fi-sfx/beep_02.ogg',
+            // phaseChange: 'sci-fi-sfx/weird_02.ogg',
+            // victory: 'sci-fi-sfx/retro_beep_05.ogg',
+            
+            // === UI ===
+            // click: 'sci-fi-sfx/terminal_01.ogg',
+            // hover: 'sci-fi-sfx/terminal_02.ogg',
+            // select: 'sci-fi-sfx/terminal_03.ogg',
+            // error: 'sci-fi-sfx/terminal_08.ogg',
+            // pause: 'sci-fi-sfx/terminal_05.ogg',
+            
+            // === ALERTS ===
+            // warning: 'sci-fi-sfx/beep_03.ogg',
+            // missileAlert: 'sci-fi-sfx/misc_01.ogg',
+            // radarPing: 'sci-fi-sfx/misc_02.ogg',
+            // bossWarning: 'sci-fi-sfx/weird_03.ogg',
+            
+            // === ENEMIES ===
+            // enemyShoot: 'sci-fi-sfx/retro_laser_01.ogg',
+            // enemySpawn: 'sci-fi-sfx/teleport_01.ogg',
+            // launch: 'sci-fi-sfx/rocket_01.ogg',
+            // droneBuzz: 'sci-fi-sfx/misc_04.ogg',
+            // alarm: 'sci-fi-sfx/misc_07.ogg',
+            // sonarPing: 'sci-fi-sfx/misc_02.ogg',
+            // stealthReveal: 'sci-fi-sfx/teleport_02.ogg',
+            
+            // === ABILITIES ===
+            // ability: 'sci-fi-sfx/weird_04.ogg',
+            // chronoBurst: 'sci-fi-sfx/weird_05.ogg',
+            // phaseShift: 'sci-fi-sfx/teleport_02.ogg',
+            // overdrive: 'sci-fi-sfx/misc_08.ogg',
+        };
+        
         // Initialize
         this.init();
     }
@@ -61,8 +130,11 @@ class SoundManager {
             return;
         }
         
-        // Generate all synthesized sounds
+        // Generate all synthesized sounds (as fallback)
         this.generateSounds();
+        
+        // Load external audio files (will override synthesized)
+        this.loadExternalSounds();
         
         // Load theme music from file
         this.loadThemeMusic();
@@ -70,7 +142,45 @@ class SoundManager {
         // Load voice clips
         this.loadVoiceClips();
         
-        if (typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) console.log('SoundManager initialized with synthesized sounds');
+        if (typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) console.log('SoundManager initialized');
+    }
+    
+    // Load external audio files, falling back to synthesized on failure
+    async loadExternalSounds() {
+        const loadPromises = [];
+        
+        for (const [name, path] of Object.entries(this.audioFiles)) {
+            loadPromises.push(this.loadExternalSound(name, path));
+        }
+        
+        await Promise.allSettled(loadPromises);
+        
+        if (this.externalSounds.size > 0) {
+            console.log(`Loaded ${this.externalSounds.size} external sound(s):`, [...this.externalSounds]);
+        }
+    }
+    
+    async loadExternalSound(name, path) {
+        try {
+            const response = await fetch(path);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            
+            // Override the synthesized sound with external file
+            this.sounds[name] = buffer;
+            this.externalSounds.add(name);
+            
+            if (typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) {
+                console.log(`Loaded external sound: ${name} from ${path}`);
+            }
+        } catch (e) {
+            // Silently fall back to synthesized sound (already generated)
+            if (typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) {
+                console.log(`Using synthesized fallback for: ${name}`);
+            }
+        }
     }
     
     // Load theme music from WAV file

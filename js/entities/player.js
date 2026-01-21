@@ -1473,7 +1473,7 @@ class Player {
                 this.stats.secondChance = false; // Consume it
                 this.invulnerableTime = 3.0; // Long invulnerability
                 this.game.screenShake(20);
-                this.game.playSound('powerup'); // Placeholder sound
+                this.game.playSound('pickupPowerup');
                 
                 // Visual effect for revive
                 for (let i = 0; i < 20; i++) {
@@ -1682,11 +1682,21 @@ class Player {
     drawUAP(ctx, x, y) {
         ctx.save();
         
-        // Check if ULTIMATE transformation is active (e.g., droplet)
-        if (this.game.isPowerupActive('ultimate') && this.game.ultimateData?.id === 'droplet') {
-            this.drawDropletTransformation(ctx, x, y);
-            ctx.restore();
-            return;
+        // Check if ULTIMATE transformation is active
+        if (this.game.isPowerupActive('ultimate')) {
+            const ultId = this.game.ultimateData?.id;
+            const ultState = this.game.powerups?.active?.ultimate;
+            
+            if (ultId === 'droplet') {
+                this.drawDropletTransformation(ctx, x, y);
+                ctx.restore();
+                return;
+            } else if (ultId === 'replicators' && ultState?.transformationTimer > 0) {
+                // Only show replicator transformation during 3 second transform phase
+                this.drawReplicatorsTransformation(ctx, x, y);
+                ctx.restore();
+                return;
+            }
         }
         
         // Apply tilt transformation for banking effect
@@ -1795,6 +1805,57 @@ class Player {
         }
         
         ctx.restore();
+    }
+    
+    // Draw the Replicators transformation (Stargate)
+    drawReplicatorsTransformation(ctx, x, y) {
+        const replicatorsSprite = Player.ultimateSprites.replicators;
+        
+        // Metallic silver pulsing glow
+        const pulse = Math.sin(Date.now() * 0.008) * 0.3 + 1;
+        const glowSize = 45 * pulse;
+        
+        // Outer metallic glow
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
+        gradient.addColorStop(0, 'rgba(170, 170, 170, 0.7)');
+        gradient.addColorStop(0.4, 'rgba(136, 136, 136, 0.4)');
+        gradient.addColorStop(0.7, 'rgba(100, 100, 100, 0.2)');
+        gradient.addColorStop(1, 'rgba(80, 80, 80, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.translate(x, y);
+        ctx.rotate(this.facingAngle);
+        
+        // Draw sprite if loaded
+        if (replicatorsSprite && replicatorsSprite.complete && replicatorsSprite.naturalWidth > 0) {
+            const size = 72;
+            ctx.drawImage(replicatorsSprite, -size/2, -size/2, size, size);
+        } else {
+            // Fallback procedural replicator if sprite not loaded
+            ctx.fillStyle = '#888888';
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 + Date.now() * 0.002;
+                const dist = 15 + Math.sin(Date.now() * 0.01 + i) * 5;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle) * dist, Math.sin(angle) * dist, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = '#aaaaaa';
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Blue energy glow effect
+        ctx.globalAlpha = 0.2 + Math.sin(Date.now() * 0.015) * 0.1;
+        ctx.fillStyle = '#00aaff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
     }
     
     // Draw the Droplet transformation (Three Body Problem easter egg)
@@ -1972,6 +2033,17 @@ Player.loadUltimateSprites = function() {
         console.warn('Failed to load droplet sprite');
     };
     dropletImg.src = 'Assets/sprites/player/droplet.png';
+    
+    // Replicators sprite
+    const replicatorsImg = new Image();
+    replicatorsImg.onload = () => {
+        Player.ultimateSprites.replicators = replicatorsImg;
+        console.log('Replicators ultimate sprite loaded');
+    };
+    replicatorsImg.onerror = () => {
+        console.warn('Failed to load replicators sprite');
+    };
+    replicatorsImg.src = 'Assets/sprites/player/replicators.png';
 };
 
 // Start preloading immediately

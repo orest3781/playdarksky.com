@@ -1536,6 +1536,17 @@ class Game {
                 this.applyImprobabilityEffect(data, dt);
                 break;
             case 'replicators':
+                // Handle transformation phase
+                const ultState = this.powerups.active.ultimate;
+                if (ultState.transformationTimer > 0) {
+                    ultState.transformationTimer -= dt;
+                    // Spawn drones when transformation ends
+                    if (ultState.transformationTimer <= 0 && !ultState.dronesSpawned) {
+                        this.spawnReplicatorDrones(data);
+                        ultState.dronesSpawned = true;
+                        this.ui.showWarning('🕷️ DRONES DEPLOYED', 'info');
+                    }
+                }
                 this.updateReplicatorDrones(data, dt);
                 break;
             case 'borg':
@@ -1877,10 +1888,78 @@ class Game {
                 drone.y += Math.sin(angle + Math.PI/2) * drone.speed * 0.3 * dt;
             }
             
-            // Visual
-            if (Math.random() < 0.1) {
-                this.particles.spawn(drone.x, drone.y, data.color, 3);
+            // Visual trail - more particles
+            if (Math.random() < 0.3) {
+                this.particles.spawn(drone.x, drone.y, '#00aaff', 4);
             }
+        }
+    }
+    
+    // Draw replicator drones
+    drawReplicatorDrones(ctx) {
+        if (!this.replicatorDrones || this.replicatorDrones.length === 0) return;
+        
+        const time = performance.now() * 0.001;
+        
+        for (const drone of this.replicatorDrones) {
+            const screenX = drone.x - this.camera.x;
+            const screenY = drone.y - this.camera.y;
+            
+            ctx.save();
+            
+            // Outer glow
+            const glowGradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 25);
+            glowGradient.addColorStop(0, 'rgba(0, 170, 255, 0.4)');
+            glowGradient.addColorStop(0.5, 'rgba(0, 170, 255, 0.2)');
+            glowGradient.addColorStop(1, 'rgba(0, 170, 255, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Rotating angle for drone
+            const rotAngle = drone.targetEnemy ? 
+                Math.atan2(drone.targetEnemy.y - drone.y, drone.targetEnemy.x - drone.x) :
+                time * 2;
+            
+            ctx.translate(screenX, screenY);
+            ctx.rotate(rotAngle);
+            
+            // Main body - metallic spider shape
+            ctx.fillStyle = '#aaaaaa';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 12, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Legs
+            ctx.strokeStyle = '#888888';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const legAngle = (i / 4) * Math.PI - Math.PI / 2 + Math.sin(time * 10 + i) * 0.2;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(legAngle) * 18, Math.sin(legAngle) * 12);
+                ctx.stroke();
+                // Other side
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(-legAngle) * 18, Math.sin(-legAngle) * 12);
+                ctx.stroke();
+            }
+            
+            // Blue energy core
+            ctx.fillStyle = '#00ddff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 4 + Math.sin(time * 5) * 1, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Core glow
+            ctx.fillStyle = 'rgba(0, 221, 255, 0.5)';
+            ctx.beginPath();
+            ctx.arc(0, 0, 7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
         }
     }
     
@@ -2001,7 +2080,9 @@ class Game {
                 this.powerups.active.ultimate.infected = [];
                 break;
             case 'replicators':
-                this.spawnReplicatorDrones(data);
+                // 3 second transformation phase before drones spawn
+                this.powerups.active.ultimate.transformationTimer = 3.0;
+                this.powerups.active.ultimate.dronesSpawned = false;
                 break;
             case 'improbability':
                 this.powerups.active.ultimate.lastEffectTime = 0;
@@ -2080,7 +2161,7 @@ class Game {
             this.ui.showWarning(`${ultData?.icon || '⭐'} ${ultData?.name || 'ULTIMATE'} CHARGED!`, 'boss');
             this.screenFlash.add(ultData?.color || '#ffaa00', 0.5, 0.5);
             this.screenShake(15);
-            this.playSound('powerUp', { volume: 0.6 });
+            this.playSound('pickupPowerup', { volume: 0.6 });
             
             // Burst of particles
             for (let i = 0; i < 30; i++) {
@@ -2918,6 +2999,11 @@ class Game {
             ctx.restore();
         }
         
+        // REPLICATOR DRONES: Draw the drone swarm
+        if (this.isPowerupActive('ultimate') && this.ultimateData?.id === 'replicators') {
+            this.drawReplicatorDrones(ctx);
+        }
+        
         // CHRONO BURST: Time distortion field
         if (this.isPowerupActive('chronoBurst')) {
             const data = POWERUPS.chronoBurst;
@@ -3149,6 +3235,16 @@ class Game {
     }
     
     spawnPickup(type, x, y, value, extraData = null) {
+        // Prevent pickups from spawning behind the action bar (bottom 120px of screen)
+        // Convert to screen space to check
+        const screenY = y - this.camera.y;
+        const uiBottomMargin = 120; // Action bar height + padding
+        
+        if (screenY > this.canvas.height - uiBottomMargin) {
+            // Push the pickup up so it's not behind UI
+            y = this.camera.y + this.canvas.height - uiBottomMargin - 20;
+        }
+        
         return this.pickups.spawn(type, x, y, value, extraData);
     }
     
