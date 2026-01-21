@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dark Sky - They have always been here</title>
     <link rel="icon" type="image/x-icon" href="Assets/sprites/favicon.ico">
-    <link rel="stylesheet" href="css/style.css?v=35">
+    <link rel="stylesheet" href="css/style.css?v=36">
     <!-- Military-style font -->
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- Skip to main content link for keyboard/screen reader users -->
@@ -30,6 +32,19 @@
             <span class="sound-label">AUDIO</span>
         </div>
         
+        <!-- User Account Panel - Top Right -->
+        <div class="user-panel" id="user-panel">
+            <div class="user-logged-out" id="user-logged-out">
+                <button class="user-btn login-btn" id="btn-login">
+                    <span class="user-icon">👤</span> SIGN IN
+                </button>
+            </div>
+            <div class="user-logged-in hidden" id="user-logged-in">
+                <span class="user-name" id="user-display-name">Player</span>
+                <button class="user-btn logout-btn" id="btn-logout">SIGN OUT</button>
+            </div>
+        </div>
+        
         <div class="menu-content">
             <div class="title-container">
                 <h1 class="game-title" data-text="DARK SKY">DARK SKY</h1>
@@ -40,10 +55,97 @@
                 <button id="btn-play" class="menu-btn primary" aria-label="Begin evasion attempt">
                     <span class="btn-icon">▶</span> LAUNCH
                 </button>
+                <button id="btn-codex" class="menu-btn secondary" aria-label="View artifact collection and enemy codex">
+                    <span class="btn-icon">📖</span> COLLECTION
+                </button>
                 <button id="btn-settings" class="menu-btn secondary" aria-label="Settings and options">
                     <span class="btn-icon">⚙</span> OPTIONS
                 </button>
             </nav>
+        </div>
+        
+        <!-- Leaderboard Panel - Left Side -->
+        <div class="leaderboard-panel" id="leaderboard-panel">
+            <div class="leaderboard-header">
+                <span class="leaderboard-icon">🏆</span>
+                <span class="leaderboard-title">HIGH SCORES</span>
+            </div>
+            <div class="leaderboard-entries" id="leaderboard-entries">
+                <div class="leaderboard-row header-row">
+                    <span class="lb-rank">#</span>
+                    <span class="lb-stat">TIME</span>
+                    <span class="lb-stat">LVL</span>
+                    <span class="lb-stat">KILLS</span>
+                    <span class="lb-difficulty">MODE</span>
+                </div>
+                <!-- Populated by JS -->
+            </div>
+            <div class="leaderboard-empty" id="leaderboard-empty">NO RECORDS YET</div>
+        </div>
+        
+        <!-- Login Modal -->
+        <div id="login-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+            <div class="modal-content login-modal">
+                <h2 class="modal-title">PILOT AUTHENTICATION</h2>
+                
+                <!-- Tab Switch -->
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="signin">SIGN IN</button>
+                    <button class="auth-tab" data-tab="signup">CREATE ACCOUNT</button>
+                </div>
+                
+                <!-- Sign In Form -->
+                <div class="auth-form" id="signin-form">
+                    <div class="form-group">
+                        <label>EMAIL</label>
+                        <input type="email" id="signin-email" placeholder="pilot@darksky.com" autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label>PASSWORD</label>
+                        <input type="password" id="signin-password" placeholder="••••••••" autocomplete="current-password">
+                    </div>
+                    <button class="btn-auth-submit" id="btn-signin-submit">AUTHENTICATE</button>
+                </div>
+                
+                <!-- Sign Up Form -->
+                <div class="auth-form hidden" id="signup-form">
+                    <div class="form-group">
+                        <label>CALLSIGN</label>
+                        <input type="text" id="signup-name" placeholder="Your pilot name" autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label>EMAIL</label>
+                        <input type="email" id="signup-email" placeholder="pilot@darksky.com" autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label>PASSWORD</label>
+                        <input type="password" id="signup-password" placeholder="Min 6 characters" autocomplete="new-password">
+                    </div>
+                    <button class="btn-auth-submit" id="btn-signup-submit">CREATE PILOT</button>
+                </div>
+                
+                <!-- OAuth Options -->
+                <div class="auth-divider">
+                    <span>OR CONTINUE WITH</span>
+                </div>
+                <div class="oauth-buttons">
+                    <button class="btn-oauth" data-provider="google" title="Sign in with Google">
+                        <span>G</span> Google
+                    </button>
+                    <button class="btn-oauth" data-provider="discord" title="Sign in with Discord">
+                        <span>D</span> Discord
+                    </button>
+                    <button class="btn-oauth" data-provider="github" title="Sign in with GitHub">
+                        <span>⌘</span> GitHub
+                    </button>
+                </div>
+                
+                <!-- Error Message -->
+                <div class="auth-error hidden" id="auth-error"></div>
+                
+                <!-- Close Button -->
+                <button class="modal-close" id="btn-close-login">✕</button>
+            </div>
         </div>
         
         <!-- Mission Setup Modal - Streamlined Single-Page Design -->
@@ -882,26 +984,26 @@
     <script src="js/data/codex.js?v=29"></script>
     <script src="js/data/achievements.js?v=29"></script>
     <script src="js/data/difficulty.js?v=29"></script>
-    <script src="js/data/saveSystem.js?v=29"></script>
+    <script src="js/data/saveSystem.js?v=30"></script>
     <script src="js/data/uapTypes.js?v=29"></script>
     <script src="js/data/upgrades.js?v=29"></script>
+    <script src="js/data/supabase.js?v=1"></script>
     
     <!-- Core Game -->
     <script src="js/utils.js?v=29"></script>
-    <script src="js/constants.js?v=33"></script>
+    <script src="js/constants.js?v=34"></script>
     <script src="js/particles.js?v=29"></script>
     <script src="js/effects.js?v=29"></script>
     <script src="js/sound.js?v=29"></script>
-    <script src="js/entities/player.js?v=35"></script>
-    <script src="js/entities/enemy.js?v=29"></script>
+    <script src="js/entities/player.js?v=36"></script>
+    <script src="js/entities/enemy.js?v=30"></script>
     <script src="js/entities/projectile.js?v=29"></script>
-    <script src="js/entities/pickup.js?v=29"></script>
+    <script src="js/entities/pickup.js?v=31"></script>
     <script src="js/entities/radarSite.js?v=29"></script>
     <script src="js/weapons.js?v=29"></script>
     <script src="js/spawner.js?v=30"></script>
-    <script src="js/ui.js?v=37"></script>
-    <script src="js/game.js?v=33"></script>
+    <script src="js/ui.js?v=40"></script>
+    <script src="js/game.js?v=37"></script>
     <script src="js/main.js?v=30"></script>
 </body>
 </html>
-4

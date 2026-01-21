@@ -95,6 +95,19 @@ class UI {
         this.uapList = [];
         this.carouselIndex = 0;
         this.carouselInitialized = false;
+        
+        // Initialize Supabase and populate leaderboard
+        this.initSupabase();
+    }
+    
+    async initSupabase() {
+        // Initialize Supabase service
+        if (window.supabaseService) {
+            await window.supabaseService.init();
+            this.updateAuthUI();
+        }
+        // Populate leaderboard (from cloud if available, local fallback)
+        this.populateLeaderboard();
     }
     
     setupEventListeners() {
@@ -210,6 +223,11 @@ class UI {
             this.updateSoundToggleState();
         }
         
+        // =====================================================
+        // AUTH UI HANDLERS
+        // =====================================================
+        this.setupAuthUI();
+        
         // Options tabs (Settings, Records, How to Play)
         document.querySelectorAll('.options-tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -283,6 +301,156 @@ class UI {
         }
     }
     
+    // =====================================================
+    // AUTHENTICATION UI
+    // =====================================================
+    setupAuthUI() {
+        const loginBtn = document.getElementById('btn-login');
+        const logoutBtn = document.getElementById('btn-logout');
+        const closeLoginBtn = document.getElementById('btn-close-login');
+        const loginModal = document.getElementById('login-modal');
+        
+        // Open login modal
+        loginBtn?.addEventListener('click', () => {
+            this.game.playSound?.('click');
+            loginModal?.classList.remove('hidden');
+        });
+        
+        // Close login modal
+        closeLoginBtn?.addEventListener('click', () => {
+            this.game.playSound?.('click');
+            loginModal?.classList.add('hidden');
+            document.getElementById('auth-error')?.classList.add('hidden');
+        });
+        
+        // Click outside to close
+        loginModal?.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.classList.add('hidden');
+                document.getElementById('auth-error')?.classList.add('hidden');
+            }
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                this.game.playSound?.('click');
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const tabId = tab.dataset.tab;
+                document.getElementById('signin-form')?.classList.toggle('hidden', tabId !== 'signin');
+                document.getElementById('signup-form')?.classList.toggle('hidden', tabId !== 'signup');
+                document.getElementById('auth-error')?.classList.add('hidden');
+            });
+        });
+        
+        // Sign in submit
+        document.getElementById('btn-signin-submit')?.addEventListener('click', async () => {
+            const email = document.getElementById('signin-email')?.value;
+            const password = document.getElementById('signin-password')?.value;
+            
+            if (!email || !password) {
+                this.showAuthError('Please enter email and password');
+                return;
+            }
+            
+            const { error } = await window.supabaseService?.signIn(email, password);
+            if (error) {
+                this.showAuthError(error.message);
+            } else {
+                loginModal?.classList.add('hidden');
+                this.game.playSound?.('select');
+                this.updateAuthUI();
+                this.populateLeaderboard();
+            }
+        });
+        
+        // Sign up submit
+        document.getElementById('btn-signup-submit')?.addEventListener('click', async () => {
+            const name = document.getElementById('signup-name')?.value;
+            const email = document.getElementById('signup-email')?.value;
+            const password = document.getElementById('signup-password')?.value;
+            
+            if (!email || !password) {
+                this.showAuthError('Please enter email and password');
+                return;
+            }
+            
+            if (password.length < 6) {
+                this.showAuthError('Password must be at least 6 characters');
+                return;
+            }
+            
+            const { error } = await window.supabaseService?.signUp(email, password, name);
+            if (error) {
+                this.showAuthError(error.message);
+            } else {
+                this.showAuthError('Check your email to confirm your account!', 'success');
+                this.game.playSound?.('select');
+            }
+        });
+        
+        // OAuth buttons
+        document.querySelectorAll('.btn-oauth').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const provider = btn.dataset.provider;
+                this.game.playSound?.('click');
+                await window.supabaseService?.signInWithOAuth(provider);
+            });
+        });
+        
+        // Logout
+        logoutBtn?.addEventListener('click', async () => {
+            this.game.playSound?.('click');
+            await window.supabaseService?.signOut();
+            this.updateAuthUI();
+            this.populateLeaderboard();
+        });
+        
+        // Listen for auth state changes
+        window.addEventListener('authStateChanged', () => {
+            this.updateAuthUI();
+            this.populateLeaderboard();
+        });
+    }
+    
+    showAuthError(message, type = 'error') {
+        const errorEl = document.getElementById('auth-error');
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+            if (type === 'success') {
+                errorEl.style.borderColor = 'rgba(0, 255, 100, 0.4)';
+                errorEl.style.color = '#00ff66';
+                errorEl.style.background = 'rgba(0, 255, 100, 0.1)';
+            } else {
+                errorEl.style.borderColor = 'rgba(255, 50, 50, 0.4)';
+                errorEl.style.color = '#ff6666';
+                errorEl.style.background = 'rgba(255, 50, 50, 0.1)';
+            }
+        }
+    }
+    
+    updateAuthUI() {
+        const loggedOut = document.getElementById('user-logged-out');
+        const loggedIn = document.getElementById('user-logged-in');
+        const displayName = document.getElementById('user-display-name');
+        
+        const user = window.supabaseService?.getUser();
+        
+        if (user) {
+            loggedOut?.classList.add('hidden');
+            loggedIn?.classList.remove('hidden');
+            if (displayName) {
+                displayName.textContent = window.supabaseService.getDisplayName();
+            }
+        } else {
+            loggedOut?.classList.remove('hidden');
+            loggedIn?.classList.add('hidden');
+        }
+    }
+
     showScreen(screen) {
         // Hide all screens
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -306,6 +474,7 @@ class UI {
         switch (screen) {
             case 'menu':
                 this.elements.mainMenu.classList.add('active');
+                this.populateLeaderboard(); // Update leaderboard when returning to menu
                 break;
             case 'hangar':
                 this.elements.hangarScreen.classList.add('active');
@@ -1792,35 +1961,50 @@ class UI {
             this.updatePickupSlot(chronoSlot, 'chronoBurst', powerups);
         }
         
-        // R - UAP Special (cooldown) OR Droplet if available
+        // R - UAP Special (cooldown) OR Ultimate if charged
         const specialSlot = actionBar.querySelector('[data-action="uapSpecial"]');
         if (specialSlot && player) {
             const fill = specialSlot.querySelector('.action-fill');
             const countEl = specialSlot.querySelector('.action-count');
             const iconEl = specialSlot.querySelector('.action-icon');
             
-            // Check if we have a droplet - it takes priority over UAP special
-            const dropletCount = powerups.inventory.droplet || 0;
+            // Get ultimate data and charge info
+            const ultData = this.game.ultimateData;
+            const ultimateCount = powerups.inventory.ultimate || 0;
+            const ultCharge = this.game.ultimateCharge || { current: 0, required: 50, chargePercent: 0 };
             
-            if (dropletCount > 0) {
-                // Show droplet mode
+            if (ultimateCount > 0) {
+                // Ultimate is CHARGED and ready to use!
                 fill.style.height = '100%';
-                fill.style.background = 'linear-gradient(to top, #c0c0c0, #ffffff)';
-                countEl.textContent = dropletCount;
-                if (iconEl) iconEl.textContent = '💧';
-                specialSlot.classList.remove('cooldown');
+                fill.style.background = `linear-gradient(to top, ${ultData?.color || '#ffaa00'}, ${ultData?.glowColor || '#ffffff'})`;
+                countEl.textContent = ultimateCount > 1 ? '×' + ultimateCount : '';
+                if (iconEl) iconEl.textContent = ultData?.icon || '⭐';
+                specialSlot.classList.remove('cooldown', 'charging');
                 specialSlot.classList.add('ready', 'legendary');
-                specialSlot.title = 'THE DROPLET - Press R to transform';
+                specialSlot.title = `${ultData?.name || 'ULTIMATE'} - Press R to activate!`;
+                specialSlot.style.setProperty('--action-color', ultData?.color || '#ffaa00');
+            } else if (ultCharge.current > 0 || ultCharge.chargePercent > 0) {
+                // Ultimate is CHARGING - show progress
+                const percent = ultCharge.chargePercent || (ultCharge.current / ultCharge.required) * 100;
+                fill.style.height = `${percent}%`;
+                fill.style.background = `linear-gradient(to top, ${ultData?.color || '#ffaa00'}88, ${ultData?.color || '#ffaa00'})`;
+                countEl.textContent = Math.floor(percent) + '%';
+                if (iconEl) iconEl.textContent = ultData?.icon || '⭐';
+                specialSlot.classList.remove('cooldown', 'ready', 'legendary');
+                specialSlot.classList.add('charging');
+                specialSlot.title = `${ultData?.name || 'ULTIMATE'} - Collect fragments to charge (${Math.floor(percent)}%)`;
+                specialSlot.style.setProperty('--action-color', ultData?.color || '#ffaa00');
             } else {
-                // Show UAP special
+                // Ultimate empty - show UAP special as fallback
                 const cooldown = player.uapAbility?.cooldownTimer || 0;
                 const maxCooldown = uapAbility?.cooldown || 60;
                 
                 // Reset style
                 fill.style.background = '';
                 if (iconEl) iconEl.textContent = uapAbility?.icon || '🔮';
-                specialSlot.classList.remove('legendary');
+                specialSlot.classList.remove('legendary', 'charging');
                 specialSlot.title = uapAbility?.name || 'UAP Special';
+                specialSlot.style.setProperty('--action-color', uapData?.color || '#ffaa00');
                 
                 if (cooldown > 0) {
                     const percent = ((maxCooldown - cooldown) / maxCooldown) * 100;
@@ -2455,6 +2639,112 @@ class UI {
         const damageData = bestRuns.highestDamage || {};
         setRecord('best-damage', Utils.formatNumber(damageData.damage || 0));
         setRecord('best-damage-date', formatDate(damageData.date));
+    }
+    
+    // =====================================================
+    // TITLE SCREEN LEADERBOARD
+    // =====================================================
+    async populateLeaderboard() {
+        const container = document.getElementById('leaderboard-entries');
+        const emptyMsg = document.getElementById('leaderboard-empty');
+        if (!container) return;
+        
+        // Try to get global leaderboard from Supabase
+        let leaderboard = [];
+        let isGlobal = false;
+        
+        if (window.supabaseService?.initialized) {
+            const { data, error } = await window.supabaseService.getGlobalLeaderboard(5);
+            if (!error && data && data.length > 0) {
+                leaderboard = data.map(entry => ({
+                    time: entry.time_survived,
+                    level: entry.level_reached,
+                    kills: entry.kills,
+                    difficulty: entry.difficulty,
+                    playerName: entry.player_name
+                }));
+                isGlobal = true;
+            }
+        }
+        
+        // Fallback to local leaderboard
+        if (leaderboard.length === 0) {
+            leaderboard = this.game.saveData?.leaderboard || [];
+        }
+        
+        // Update header to show global/local
+        const headerTitle = document.querySelector('.leaderboard-title');
+        if (headerTitle) {
+            headerTitle.textContent = isGlobal ? 'GLOBAL RANKINGS' : 'HIGH SCORES';
+        }
+        
+        // Keep header row, remove old data rows
+        const headerRow = container.querySelector('.header-row');
+        container.innerHTML = '';
+        if (headerRow) {
+            // Update header for global (add NAME column)
+            if (isGlobal) {
+                headerRow.innerHTML = `
+                    <span class="lb-rank">#</span>
+                    <span class="lb-stat lb-name">PILOT</span>
+                    <span class="lb-stat">TIME</span>
+                    <span class="lb-stat">LVL</span>
+                    <span class="lb-stat">KILLS</span>
+                `;
+            } else {
+                headerRow.innerHTML = `
+                    <span class="lb-rank">#</span>
+                    <span class="lb-stat">TIME</span>
+                    <span class="lb-stat">LVL</span>
+                    <span class="lb-stat">KILLS</span>
+                    <span class="lb-difficulty">MODE</span>
+                `;
+            }
+            container.appendChild(headerRow);
+        }
+        
+        // Show/hide empty message
+        if (emptyMsg) {
+            emptyMsg.style.display = leaderboard.length === 0 ? 'block' : 'none';
+        }
+        
+        // Add entries
+        leaderboard.forEach((entry, index) => {
+            const row = document.createElement('div');
+            row.className = `leaderboard-row data-row rank-${index + 1}`;
+            
+            // Format time as MM:SS
+            const time = entry.time || 0;
+            const minutes = Math.floor(time / 60);
+            const seconds = Math.floor(time % 60);
+            const timeStr = `${minutes}:${String(seconds).padStart(2, '0')}`;
+            
+            if (isGlobal) {
+                // Global leaderboard shows player name
+                const playerName = (entry.playerName || 'Anonymous').substring(0, 12);
+                row.innerHTML = `
+                    <span class="lb-rank">${index + 1}</span>
+                    <span class="lb-stat lb-name">${playerName}</span>
+                    <span class="lb-stat">${timeStr}</span>
+                    <span class="lb-stat">${entry.level || 1}</span>
+                    <span class="lb-stat">${Utils.formatNumber(entry.kills || 0)}</span>
+                `;
+            } else {
+                // Local leaderboard shows difficulty
+                const diffId = entry.difficulty || 'normal';
+                const diffClass = `diff-${diffId}`;
+                const diffDisplay = diffId.charAt(0).toUpperCase() + diffId.slice(1);
+                row.innerHTML = `
+                    <span class="lb-rank">${index + 1}</span>
+                    <span class="lb-stat">${timeStr}</span>
+                    <span class="lb-stat">${entry.level || 1}</span>
+                    <span class="lb-stat">${Utils.formatNumber(entry.kills || 0)}</span>
+                    <span class="lb-difficulty ${diffClass}">${diffDisplay}</span>
+                `;
+            }
+            
+            container.appendChild(row);
+        });
     }
     
     // =====================================================

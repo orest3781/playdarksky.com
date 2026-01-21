@@ -973,11 +973,16 @@ class Player {
             speedMult *= POWERUPS.chronoBurst.speedBoost;
         }
         
-        // DROPLET power-up: 2.5x speed boost + invulnerability
-        if (this.game.isPowerupActive('droplet')) {
-            speedMult *= POWERUPS.droplet.speedBoost;
-            this.invulnerable = true;
-            this.invulnerableTime = 0.1; // Keep refreshing invulnerability
+        // ULTIMATE power-up effects (speed boost + invulnerability for certain ultimates)
+        if (this.game.isPowerupActive('ultimate')) {
+            const ultData = this.game.ultimateData;
+            if (ultData?.speedBoost) {
+                speedMult *= ultData.speedBoost;
+            }
+            if (ultData?.invulnerable) {
+                this.invulnerable = true;
+                this.invulnerableTime = 0.1; // Keep refreshing invulnerability
+            }
         }
         
         this.maxSpeed = this.stats.speed * speedMult;
@@ -1677,8 +1682,8 @@ class Player {
     drawUAP(ctx, x, y) {
         ctx.save();
         
-        // Check if DROPLET transformation is active
-        if (this.game.isPowerupActive('droplet')) {
+        // Check if ULTIMATE transformation is active (e.g., droplet)
+        if (this.game.isPowerupActive('ultimate') && this.game.ultimateData?.id === 'droplet') {
             this.drawDropletTransformation(ctx, x, y);
             ctx.restore();
             return;

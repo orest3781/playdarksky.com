@@ -251,6 +251,22 @@ class Pickup {
                 game.particles.explosion(this.x, this.y, ultColor, 35);
                 game.screenFlash.add('#ffffff', 0.5, 0.3);
                 break;
+            
+            case 'ultimateFragment':
+                // Ultimate fragment - adds to charge meter
+                const fragmentValue = this.value || 1;
+                game.collectUltimateFragment(fragmentValue);
+                const fragColor = game.ultimateData?.color || '#ffaa00';
+                // Particle trail toward player
+                game.particles.emit({
+                    x: this.x, y: this.y,
+                    count: 5 + fragmentValue,
+                    color: fragColor,
+                    speed: 80,
+                    life: 0.4,
+                    size: 4 + fragmentValue
+                });
+                break;
                 
             case 'powerup':
                 // Generic powerup type - uses extraData to determine which powerup
@@ -409,6 +425,10 @@ class Pickup {
             case 'powerup_ultimate':
                 this.drawUltimatePickup(ctx, screenX, screenY);
                 break;
+            
+            case 'ultimateFragment':
+                this.drawUltimateFragment(ctx, screenX, screenY, t, pulse);
+                break;
                 
             case 'powerup':
                 // Generic powerup rendering - uses extraData to get powerup info
@@ -476,6 +496,81 @@ class Pickup {
         ctx.fillStyle = data.glowColor;
         ctx.font = `bold ${r * 0.5}px 'Share Tech Mono', monospace`;
         ctx.fillText(data.key, x, y + r * 1.2);
+    }
+    
+    drawUltimateFragment(ctx, x, y, t, pulse) {
+        // Get ultimate data from game for theming
+        const game = window.gameInstance || window.game;
+        const ultData = game?.ultimateData || { color: '#ffaa00', glowColor: '#ffdd66', icon: '⭐' };
+        
+        // Scale based on value (bigger fragments = more charge)
+        const valueScale = Math.min(1.5, 0.8 + (this.value || 1) * 0.1);
+        // Safety: ensure r is valid and at least 1 to prevent gradient crashes
+        const rawR = (this.radius || 10) * 0.8 * (pulse || 1) * valueScale;
+        const r = (!isFinite(rawR) || rawR < 1) ? 8 : rawR;
+        
+        // Rotating sparkle effect
+        const rotAngle = t * 2;
+        
+        // Outer glow (color matches selected ultimate)
+        // Safety: outer radius must be > 0 to avoid canvas crash
+        const glowRadius = Math.max(1, r * 2);
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+        glow.addColorStop(0, ultData.glowColor || ultData.color);
+        glow.addColorStop(0.4, ultData.color + '88');
+        glow.addColorStop(1, 'transparent');
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner crystal/shard shape (rotating diamond)
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotAngle);
+        ctx.globalAlpha = 0.9;
+        
+        // Diamond shape
+        ctx.fillStyle = ultData.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -r);           // Top
+        ctx.lineTo(r * 0.6, 0);      // Right
+        ctx.lineTo(0, r);            // Bottom
+        ctx.lineTo(-r * 0.6, 0);     // Left
+        ctx.closePath();
+        ctx.fill();
+        
+        // Inner highlight
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.6);
+        ctx.lineTo(r * 0.3, 0);
+        ctx.lineTo(0, r * 0.3);
+        ctx.lineTo(-r * 0.3, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.restore();
+        
+        // Sparkle particles around it
+        ctx.globalAlpha = 0.8;
+        const sparkleCount = 3 + Math.floor((this.value || 1) / 2);
+        for (let i = 0; i < sparkleCount; i++) {
+            const angle = (i / sparkleCount) * Math.PI * 2 + t;
+            const dist = r * 1.5 + Math.sin(t * 3 + i) * 5;
+            const sx = x + Math.cos(angle) * dist;
+            const sy = y + Math.sin(angle) * dist;
+            const sparkleSize = 2 + Math.sin(t * 4 + i) * 1;
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(sx, sy, sparkleSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.globalAlpha = 1;
     }
     
     drawUltimatePickup(ctx, x, y) {

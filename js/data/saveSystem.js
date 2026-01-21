@@ -44,6 +44,10 @@ const DEFAULT_SAVE = {
         highestDamage: { damage: 0, date: null, difficulty: 'normal' }
     },
     
+    // Leaderboard - Top 5 runs sorted by survival time
+    leaderboard: [],
+    // Each entry: { time, level, kills, difficulty, date }
+    
     // Collections
     collections: {
         ufoEvents: [],      // Investigated UFO event IDs

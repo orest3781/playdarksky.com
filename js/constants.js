@@ -429,6 +429,7 @@ const ULTIMATES = {
         name: 'THE DROPLET',
         source: 'Three Body Problem',
         icon: '💧',
+        sprite: 'droplet',
         description: 'Transform into the indestructible Trisolaran probe',
         lore: 'A single droplet destroyed the entire human fleet in seconds...',
         color: '#c0c0c0',
@@ -445,85 +446,12 @@ const ULTIMATES = {
         vulnerableAfter: 2.0  // 2s vulnerability after effect ends
     },
     
-    protomolecule: {
-        id: 'protomolecule',
-        name: 'PROTOMOLECULE',
-        source: 'The Expanse',
-        icon: '🧬',
-        description: 'Infect enemies - they fight for you, then explode',
-        lore: 'It has a purpose... we just dont know what it is yet.',
-        color: '#00aaff',
-        glowColor: '#66ddff',
-        duration: 8.0,
-        // Effects
-        infectionRadius: 150,
-        infectedDuration: 6.0,    // How long enemies fight for you
-        infectedDamageMult: 0.5,  // Infected deal 50% of their damage
-        maxInfected: 5,
-        explosionDamage: 200,     // Damage when infected enemy explodes
-        explosionRadius: 80
-    },
-    
-    prescience: {
-        id: 'prescience',
-        name: 'SPICE PRESCIENCE',
-        source: 'Dune',
-        icon: '👁️',
-        description: 'See the future - auto-dodge all projectiles, see spawn points',
-        lore: 'He who controls the spice, controls the universe.',
-        color: '#ffaa00',
-        glowColor: '#ffdd66',
-        duration: 12.0,
-        // Effects
-        autoDodge: true,          // Auto-evade all projectiles
-        seeSpawns: true,          // Show where enemies will spawn
-        spawnPreviewTime: 3.0,    // See 3 seconds into the future
-        damageBonus: 0.25         // +25% damage (prescient strikes)
-    },
-    
-    atField: {
-        id: 'atField',
-        name: 'A.T. FIELD',
-        source: 'Evangelion',
-        icon: '🛡️',
-        description: 'Absolute Terror Field - reflects damage back at attackers',
-        lore: 'The light of the soul... an inviolable sanctuary.',
-        color: '#ff6600',
-        glowColor: '#ffaa66',
-        duration: 0,              // Lasts until shield HP depleted
-        // Effects
-        shieldHP: 300,            // Absorbs 300 damage
-        reflectMult: 2.0,         // Reflects 200% damage back
-        hexagonVisual: true,
-        knockbackOnHit: 200       // Pushes enemies back on hit
-    },
-    
-    improbability: {
-        id: 'improbability',
-        name: 'IMPROBABILITY DRIVE',
-        source: "Hitchhiker's Guide",
-        icon: '🎲',
-        description: 'Reality becomes chaotic - random beneficial effects',
-        lore: 'The ships hung in the sky in much the same way that bricks dont.',
-        color: '#ff00ff',
-        glowColor: '#ff88ff',
-        duration: 6.0,
-        // Effects - random each tick
-        effects: [
-            'enemyToPickup',      // Random enemy becomes XP orb
-            'teleportRandom',     // Blink to random safe location
-            'weaponBurst',        // Fire all weapons at once
-            'healPulse',          // Heal 10% HP
-            'timeSkip'            // Brief invulnerability
-        ],
-        effectInterval: 0.5       // Random effect every 0.5s
-    },
-    
     replicators: {
         id: 'replicators',
         name: 'REPLICATOR SWARM',
         source: 'Stargate',
         icon: '🕷️',
+        sprite: 'replicators',
         description: 'Deploy self-replicating drones that seek and destroy',
         lore: 'They consume technology and multiply. Unstoppable.',
         color: '#888888',
@@ -536,40 +464,6 @@ const ULTIMATES = {
         droneSpeed: 350,
         replicateOnKill: true,    // Killed enemy spawns new drone (up to max)
         maxDrones: 12
-    },
-    
-    foldspace: {
-        id: 'foldspace',
-        name: 'FOLDSPACE JUMP',
-        source: 'Dune/BSG',
-        icon: '⚡',
-        description: 'Instant teleport to cursor - damages at both locations',
-        lore: 'Travel without moving. Space bends to your will.',
-        color: '#8800ff',
-        glowColor: '#aa66ff',
-        duration: 0,              // Instant effect
-        // Effects
-        charges: 3,               // 3 jumps per pickup
-        damage: 200,              // Damage at origin AND destination
-        damageRadius: 100,
-        invulnerableTime: 0.5     // Brief i-frames during jump
-    },
-    
-    borg: {
-        id: 'borg',
-        name: 'BORG ADAPTATION',
-        source: 'Star Trek',
-        icon: '🤖',
-        description: 'Adapt to damage - become immune to the last attack type',
-        lore: 'Resistance is futile. You will be assimilated.',
-        color: '#00ff00',
-        glowColor: '#88ff88',
-        duration: 20.0,
-        // Effects
-        adaptToLastDamage: true,  // Immune to last damage type
-        damageTypes: ['projectile', 'contact', 'explosion', 'beam'],
-        healOnAdapt: 0.05,        // Heal 5% when adapting
-        stackingResist: 0.1       // +10% resist to non-adapted types
     }
 };
 

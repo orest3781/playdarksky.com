@@ -575,6 +575,9 @@ class Enemy {
         // === TEMPORARY POWER-UP DROPS (Q, E, F) ===
         // These are the fun temporary buffs!
         for (const [id, data] of Object.entries(POWERUPS)) {
+            // Skip 'ultimate' in POWERUPS - it now uses fragment system
+            if (id === 'ultimate') continue;
+            
             let dropChance = data.dropChance * luck;
             if (this.data.elite) dropChance = data.eliteDropChance * luck;
             if (this.data.boss) dropChance = data.bossDropChance * luck;
@@ -586,6 +589,21 @@ class Enemy {
                     1
                 );
             }
+        }
+        
+        // === ULTIMATE FRAGMENT DROPS ===
+        // Fragments charge your ultimate ability - collect enough to earn a charge!
+        // Drop rate: 20% normal, 60% elite, 100% boss (guaranteed)
+        // Value: 1-2 from normal, 3-5 from elite, 10-15 from boss
+        const fragmentDropChance = (this.data.boss ? 1.0 : (this.data.elite ? 0.6 : 0.2)) * luck;
+        if (Math.random() < fragmentDropChance) {
+            const fragmentValue = this.data.boss ? Utils.random(10, 15) : 
+                                  (this.data.elite ? Utils.random(3, 5) : Utils.random(1, 2));
+            this.game.spawnPickup('ultimateFragment', 
+                this.x + Utils.random(-20, 20), 
+                this.y + Utils.random(-20, 20), 
+                Math.floor(fragmentValue)
+            );
         }
         
         // === ARTIFACT DROPS (Codex collectibles) ===

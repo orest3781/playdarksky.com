@@ -100,7 +100,7 @@ class Game {
                 shield: 0,
                 chronoBurst: 0,
                 phaseShift: 0, // Energy-based, not inventory-based
-                ultimate: 0   // Selected ultimate (R key)
+                ultimate: 0   // Selected ultimate (R key) - now charged by collecting fragments
             },
             // Active effects
             active: {
@@ -110,6 +110,14 @@ class Game {
                 phaseShift: { active: false, timer: 0 },
                 ultimate: { active: false, timer: 0, charges: 0 }
             }
+        };
+        
+        // Ultimate charge system - collect fragments to charge your ultimate
+        this.ultimateCharge = {
+            current: 0,           // Current fragments collected
+            required: 50,         // Fragments needed for full charge (scales with game progress)
+            maxCharges: 2,        // Maximum stored ultimate charges
+            chargePercent: 0      // 0-100 for UI display
         };
         
         // Gravity Bombs (active effects)
@@ -710,6 +718,28 @@ class Game {
         this.timeSlow.active = false;
         this.reaperSystem.reset();
         
+        // Reset ultimate charge system
+        this.ultimateCharge = {
+            current: 0,
+            required: 50,        // Base fragments needed
+            maxCharges: 2,
+            chargePercent: 0
+        };
+        
+        // Reset powerup inventory
+        this.powerups.inventory = {
+            overdrive: 0,
+            shield: 0,
+            chronoBurst: 0,
+            phaseShift: 0,
+            ultimate: 0
+        };
+        
+        // Reset active powerups
+        for (const key of Object.keys(this.powerups.active)) {
+            this.powerups.active[key] = { active: false, timer: 0 };
+        }
+        
         // Reset and initialize radar sites
         this.radarSiteManager.clear();
         this.radarSiteManager.init();
@@ -794,8 +824,13 @@ class Game {
             this.deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.1) * this.timeScale;
             this.lastTime = currentTime;
             
-            if (!this.paused && !this.levelingUp) {
+            if (!this.paused && !this.levelingUp && !this.salvageUpgradeActive) {
                 this.update(this.deltaTime);
+            }
+            
+            // Update salvage timer even while paused (so it can expire)
+            if (this.salvageUpgradeActive) {
+                this.updateSalvageUpgrade(this.deltaTime);
             }
             
             this.render();
@@ -926,8 +961,7 @@ class Game {
         // Update Reaper anti-camping system
         this.reaperSystem.update(dt);
         
-        // Update salvage upgrade overlay timer
-        this.updateSalvageUpgrade(dt);
+        // Note: Salvage upgrade timer is updated in gameLoop even when paused
         
         // Update UI
         this.ui.updateHUD();
@@ -1160,6 +1194,19 @@ class Game {
         
         // Deactivation feedback
         this.ui.showWarning(`YOUR ${data.name} FADES`, 'alert');
+    }
+    
+    // Check if a power-up is currently active
+    isPowerupActive(id) {
+        // Handle ultimate separately
+        if (id === 'ultimate' || id === 'droplet') {
+            return this.powerups?.active?.ultimate?.active && 
+                   this.powerups.active.ultimate.timer > 0;
+        }
+        
+        // Regular power-ups
+        const state = this.powerups?.active?.[id];
+        return state?.active && state.timer > 0;
     }
     
     // =====================================================
@@ -1980,20 +2027,83 @@ class Game {
         return true;
     }
     
+    // Add ultimate fragment to charge meter (called when fragment is picked up)
+    collectUltimateFragment(value = 1) {
+        const ultData = this.ultimateData;
+        
+        // Safety: ensure ultimateCharge is initialized with valid values
+        if (!this.ultimateCharge || !isFinite(this.ultimateCharge.required) || this.ultimateCharge.required <= 0) {
+            this.ultimateCharge = {
+                current: 0,
+                required: 50,
+                maxCharges: 2,
+                chargePercent: 0
+            };
+        }
+        
+        // Check if we're already at max charges
+        if (this.powerups.inventory.ultimate >= this.ultimateCharge.maxCharges) {
+            // At max charges - small visual feedback but no gain
+            this.particles.emit({
+                x: this.player.x,
+                y: this.player.y - 20,
+                count: 3,
+                color: ultData?.color || '#ffaa00',
+                speed: 50,
+                life: 0.3,
+                size: 4
+            });
+            return false;
+        }
+        
+        // Safety: ensure value is valid
+        value = (isFinite(value) && value > 0) ? value : 1;
+        
+        // Add to current charge
+        this.ultimateCharge.current += value;
+        
+        // Safety: calculate percent with fallback
+        const required = Math.max(1, this.ultimateCharge.required);
+        this.ultimateCharge.chargePercent = Math.min(100, (this.ultimateCharge.current / required) * 100);
+        
+        // Check if we've collected enough for a full charge
+        if (this.ultimateCharge.current >= required) {
+            // Grant an ultimate charge!
+            this.powerups.inventory.ultimate++;
+            this.ultimateCharge.current -= required;
+            this.ultimateCharge.chargePercent = (this.ultimateCharge.current / required) * 100;
+            
+            // Increase required fragments slightly for next charge (scaling difficulty)
+            this.ultimateCharge.required = Math.min(100, Math.floor(this.ultimateCharge.required * 1.1));
+            
+            // Big feedback for gaining a charge!
+            this.ui.showWarning(`${ultData?.icon || '⭐'} ${ultData?.name || 'ULTIMATE'} CHARGED!`, 'boss');
+            this.screenFlash.add(ultData?.color || '#ffaa00', 0.5, 0.5);
+            this.screenShake(15);
+            this.playSound('powerUp', { volume: 0.6 });
+            
+            // Burst of particles
+            for (let i = 0; i < 30; i++) {
+                const angle = (i / 30) * Math.PI * 2;
+                this.particles.spawn(
+                    this.player.x + Math.cos(angle) * 30,
+                    this.player.y + Math.sin(angle) * 30,
+                    ultData?.color || '#ffaa00', 6
+                );
+            }
+        } else {
+            // Small feedback for collecting a fragment
+            this.playSound('pickupXP', { volume: 0.2, pitchVariation: 0.5 });
+        }
+        
+        return true;
+    }
+    
     // Add power-up to inventory (called when picked up)
     collectPowerup(id) {
-        // Handle ultimate pickup specially
-        if (id === 'ultimate') {
-            const ultData = this.ultimateData;
-            const maxStack = 2; // Max 2 ultimates
-            if (this.powerups.inventory.ultimate < maxStack) {
-                this.powerups.inventory.ultimate++;
-                this.ui.showWarning(`${ultData?.icon || '⭐'} ${ultData?.name || 'ULTIMATE'} ACQUIRED`, 'boss');
-                this.screenFlash.add(ultData?.color || '#ffaa00', 0.4, 0.4);
-                this.screenShake(10);
-                return true;
-            }
-            return false;
+        // Handle ultimate fragment pickup - redirect to new system
+        if (id === 'ultimate' || id === 'ultimateFragment') {
+            return this.collectUltimateFragment(1);
         }
         
         const data = POWERUPS[id];
@@ -3560,6 +3670,33 @@ class Game {
         this.ui.showPhaseAnnouncement(phaseIndex, phase);
     }
     
+    // =====================================================
+    // LEADERBOARD SYSTEM
+    // =====================================================
+    
+    // Add a run to the leaderboard (keeps top 5 by survival time)
+    updateLeaderboard(runData) {
+        // Ensure leaderboard array exists
+        if (!this.saveData.leaderboard) {
+            this.saveData.leaderboard = [];
+        }
+        
+        // Add new entry
+        this.saveData.leaderboard.push({
+            time: runData.time || 0,
+            level: runData.level || 1,
+            kills: runData.kills || 0,
+            difficulty: runData.difficulty || 'normal',
+            date: runData.date || new Date().toISOString()
+        });
+        
+        // Sort by time descending (best runs first)
+        this.saveData.leaderboard.sort((a, b) => b.time - a.time);
+        
+        // Keep only top 5
+        this.saveData.leaderboard = this.saveData.leaderboard.slice(0, 5);
+    }
+    
     // Game over
     gameOver(victory, failReason = null) {
         this.running = false;
@@ -3600,6 +3737,21 @@ class Game {
         // Sync achievement data back to saveData
         this.saveData.achievements = this.achievements.unlocked;
         this.saveData.achievementProgress = this.achievements.progress;
+        
+        // === ADD TO LOCAL LEADERBOARD ===
+        const scoreData = {
+            time: this.gameTime,
+            level: this.player?.level || 1,
+            kills: this.kills,
+            difficulty: this.selectedDifficulty?.id || 'normal',
+            date: new Date().toISOString()
+        };
+        this.updateLeaderboard(scoreData);
+        
+        // === SUBMIT TO GLOBAL LEADERBOARD (Supabase) ===
+        if (window.supabaseService?.initialized) {
+            window.supabaseService.submitScore(scoreData);
+        }
         
         SaveManager.save(this.saveData);
         

@@ -221,7 +221,7 @@ body:has(#settings-screen.active) #scanlines-overlay {
 /* Sound toggle button */
 .sound-toggle {
     position: absolute;
-    top: 20px;
+    top: 70px;
     right: 20px;
     display: flex;
     align-items: center;
@@ -348,6 +348,449 @@ body:has(#settings-screen.active) #scanlines-overlay {
 @keyframes glitch1 {
     0%, 90%, 100% { transform: translate(0); opacity: 0; }
     92% { transform: translate(-3px, 1px); opacity: 0.4; }
+}
+
+/* =====================================================
+   LEADERBOARD PANEL - Main Menu
+   ===================================================== */
+.leaderboard-panel {
+    position: fixed;
+    left: 30px;
+    top: 30%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, rgba(0, 20, 30, 0.9) 0%, rgba(0, 40, 50, 0.85) 100%);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    padding: 15px 20px;
+    min-width: 320px;
+    max-width: 380px;
+    box-shadow: 
+        0 0 15px rgba(0, 255, 204, 0.2),
+        inset 0 0 30px rgba(0, 255, 204, 0.05);
+    overflow: hidden;
+    z-index: 10;
+}
+
+.leaderboard-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.leaderboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 255, 204, 0.3);
+}
+
+.leaderboard-icon {
+    font-size: 1.3rem;
+    filter: drop-shadow(0 0 5px gold);
+}
+
+.leaderboard-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--primary);
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+}
+
+.leaderboard-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.leaderboard-row {
+    display: grid;
+    grid-template-columns: 25px 1fr 50px 35px 45px;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.lb-name {
+    text-align: left !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.leaderboard-row.header-row {
+    background: rgba(0, 255, 204, 0.1);
+    font-size: 0.65rem;
+    color: rgba(0, 255, 204, 0.7);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+}
+
+.leaderboard-row.data-row {
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-primary);
+}
+
+.leaderboard-row.data-row:hover {
+    background: rgba(0, 255, 204, 0.15);
+}
+
+.leaderboard-row.data-row.rank-1 {
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
+    border-left: 2px solid gold;
+}
+
+.leaderboard-row.data-row.rank-2 {
+    background: linear-gradient(90deg, rgba(192, 192, 192, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
+    border-left: 2px solid silver;
+}
+
+.leaderboard-row.data-row.rank-3 {
+    background: linear-gradient(90deg, rgba(205, 127, 50, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
+    border-left: 2px solid #cd7f32;
+}
+
+.lb-rank {
+    font-weight: 700;
+    color: var(--primary);
+    text-align: center;
+}
+
+.rank-1 .lb-rank { color: gold; text-shadow: 0 0 8px gold; }
+.rank-2 .lb-rank { color: silver; text-shadow: 0 0 5px silver; }
+.rank-3 .lb-rank { color: #cd7f32; text-shadow: 0 0 5px #cd7f32; }
+
+.lb-stat {
+    text-align: center;
+}
+
+.lb-difficulty {
+    text-align: right;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.leaderboard-empty {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+}
+
+.leaderboard-entries:empty + .leaderboard-empty {
+    display: block;
+}
+
+/* Difficulty colors in leaderboard */
+.lb-difficulty.diff-easy { color: #4CAF50; }
+.lb-difficulty.diff-normal { color: #2196F3; }
+.lb-difficulty.diff-hard { color: #FF9800; }
+.lb-difficulty.diff-nightmare { color: #f44336; }
+.lb-difficulty.diff-impossible { color: #9C27B0; text-shadow: 0 0 5px #9C27B0; }
+
+/* =====================================================
+   USER PANEL - Top Right of Main Menu
+   ===================================================== */
+.user-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 20;
+}
+
+.user-logged-out,
+.user-logged-in {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-logged-in.hidden,
+.user-logged-out.hidden {
+    display: none;
+}
+
+.user-btn {
+    background: linear-gradient(135deg, rgba(0, 30, 40, 0.9) 0%, rgba(0, 50, 60, 0.85) 100%);
+    border: 1px solid var(--primary);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: var(--primary);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-btn:hover {
+    background: rgba(0, 255, 204, 0.15);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+    transform: translateY(-1px);
+}
+
+.user-icon {
+    font-size: 1rem;
+}
+
+.user-name {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--primary);
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    background: rgba(0, 255, 204, 0.1);
+    border-radius: 4px;
+    border: 1px solid rgba(0, 255, 204, 0.3);
+}
+
+.logout-btn {
+    font-size: 0.65rem;
+    padding: 6px 10px;
+    color: rgba(255, 100, 100, 0.8);
+    border-color: rgba(255, 100, 100, 0.4);
+}
+
+.logout-btn:hover {
+    background: rgba(255, 100, 100, 0.15);
+    box-shadow: 0 0 10px rgba(255, 100, 100, 0.3);
+}
+
+/* =====================================================
+   LOGIN MODAL
+   ===================================================== */
+.login-modal {
+    max-width: 400px;
+    padding: 30px;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 25px;
+    border-bottom: 1px solid rgba(0, 255, 204, 0.3);
+}
+
+.auth-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.auth-tab:hover {
+    color: var(--primary);
+}
+
+.auth-tab.active {
+    color: var(--primary);
+}
+
+.auth-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.auth-form.hidden {
+    display: none;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: rgba(0, 255, 204, 0.7);
+}
+
+.form-group input {
+    background: rgba(0, 20, 30, 0.8);
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    border-radius: 4px;
+    padding: 12px 14px;
+    color: var(--text-primary);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+}
+
+.form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-auth-submit {
+    background: linear-gradient(135deg, var(--primary) 0%, #00aa88 100%);
+    border: none;
+    border-radius: 6px;
+    padding: 14px;
+    color: #000;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 10px;
+}
+
+.btn-auth-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 255, 204, 0.4);
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    margin: 25px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(0, 255, 204, 0.2);
+}
+
+.auth-divider span {
+    padding: 0 15px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.oauth-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-oauth {
+    flex: 1;
+    background: rgba(0, 20, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 10px 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-oauth:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-oauth[data-provider="google"]:hover {
+    border-color: #4285f4;
+    color: #4285f4;
+}
+
+.btn-oauth[data-provider="discord"]:hover {
+    border-color: #5865F2;
+    color: #5865F2;
+}
+
+.btn-oauth[data-provider="github"]:hover {
+    border-color: #fff;
+    color: #fff;
+}
+
+.btn-oauth span {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.auth-error {
+    background: rgba(255, 50, 50, 0.1);
+    border: 1px solid rgba(255, 50, 50, 0.4);
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: #ff6666;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.auth-error.hidden {
+    display: none;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+    color: var(--primary);
+}
+
+@keyframes glitch1-detail {
     94% { transform: translate(3px, -1px); opacity: 0.4; }
     96% { transform: translate(-2px, 2px); opacity: 0.3; }
     98% { transform: translate(2px, -2px); opacity: 0.3; }
@@ -6025,6 +6468,33 @@ body:has(#settings-screen.active) #scanlines-overlay {
     to { 
         box-shadow: 0 0 25px rgba(255, 255, 255, 0.8),
                     0 0 50px rgba(192, 192, 192, 0.5);
+    }
+}
+
+/* Charging slot (Ultimate charging up) */
+.action-slot.charging {
+    border-color: var(--action-color, #ffaa00);
+    opacity: 0.9;
+    animation: charging-pulse 1.5s ease infinite;
+}
+
+.action-slot.charging .action-fill {
+    opacity: 0.6;
+}
+
+.action-slot.charging .action-count {
+    font-size: 10px;
+    color: var(--action-color, #ffaa00);
+    text-shadow: 0 0 5px var(--action-color, #ffaa00);
+}
+
+@keyframes charging-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+    }
+    50% { 
+        box-shadow: 0 0 20px rgba(255, 170, 0, 0.6),
+                    0 0 30px rgba(255, 200, 100, 0.3);
     }
 }
 
