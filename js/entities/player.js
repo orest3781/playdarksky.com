@@ -826,8 +826,11 @@ class Player {
         const lvl = weapon.level - 1;
         const bonuses = data.levelBonuses;
         
+        // Cap stats.damage to prevent exponential scaling bugs (max 5x multiplier)
+        const cappedDamage = Math.min(this.stats.damage, 5.0);
+        
         // Base stats + Level bonuses + Global stats
-        weapon.damage = (data.baseDamage + (bonuses.damage || 0) * lvl) * this.stats.damage;
+        weapon.damage = (data.baseDamage + (bonuses.damage || 0) * lvl) * cappedDamage;
         weapon.radius = ((data.baseRadius || 0) + (bonuses.radius || 0) * lvl) * this.stats.area;
         weapon.projectiles = (data.baseProjectiles || 1) + (bonuses.projectiles || 0) * lvl;
         weapon.duration = (data.baseDuration || 0) + (bonuses.duration || 0) * lvl;
@@ -1124,9 +1127,10 @@ class Player {
         const data = weapon.data;
         
         // OVERDRIVE power-up: 2x damage
+        // Note: weapon.damage already includes this.stats.damage from updateWeaponStats
         const damageMult = this.game.isPowerupActive('overdrive') ? 
             POWERUPS.overdrive.damageMult : 1;
-        const damage = weapon.damage * this.stats.damage * damageMult;
+        const damage = weapon.damage * damageMult;
         
         switch (data.type) {
             case 'aoe':
@@ -1415,10 +1419,11 @@ class Player {
             const orbY = this.y + Math.sin(orb.angle) * orb.distance;
             
             // Check collision with enemies
+            // Note: weapon.damage already includes this.stats.damage
             for (const enemy of this.game.enemies) {
                 const dist = Utils.distance(orbX, orbY, enemy.x, enemy.y);
                 if (dist <= 15 + enemy.radius) {
-                    enemy.takeDamage(weapon.damage * this.stats.damage * dt * 10, this);
+                    enemy.takeDamage(weapon.damage * dt * 10, this);
                 }
             }
         }
@@ -1557,7 +1562,10 @@ class Player {
         // Level-up bonuses (small stat increases per level)
         this.stats.maxHealth += 5;  // +5 max HP per level
         this.health = Math.min(this.health + 10, this.stats.maxHealth); // Heal 10 HP
-        this.stats.damage += 0.02;  // +2% damage per level
+        // Diminishing damage bonus per level, capped at 2.0x total
+        if (this.stats.damage < 2.0) {
+            this.stats.damage += 0.01;  // +1% damage per level (was 2%)
+        }
         
         // Show level-up notification
         this.game.ui.showWarning(`LEVEL ${this.level}!`, 'success');

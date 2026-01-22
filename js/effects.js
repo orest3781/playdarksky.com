@@ -15,8 +15,14 @@ class DamageNumberSystem {
     
     spawn(x, y, damage, options = {}) {
         // Don't show 0 or very small damage numbers
-        const displayDamage = Math.floor(damage);
+        let displayDamage = Math.floor(damage);
         if (displayDamage <= 0) return;
+        
+        // Sanity cap - if damage is absurdly high, something is broken
+        // Cap display at 99,999 to keep things readable
+        if (displayDamage > 99999) {
+            displayDamage = 99999;
+        }
         
         const isCrit = options.crit || false;
         const isHeal = options.heal || false;
