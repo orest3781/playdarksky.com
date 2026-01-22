@@ -212,46 +212,36 @@ class ComboSystem {
     }
     
     draw(ctx) {
-        if (this.combo < 5) return;
+        // Only show combo briefly after milestones, not constantly
+        if (this.combo < 10 || this.flashTime <= 0) return;
         
         const x = ctx.canvas.width / 2;
         const y = 100;
         
         ctx.save();
-        ctx.globalAlpha = Math.min(1, this.comboTimer);
+        ctx.globalAlpha = Math.min(0.8, this.flashTime * 4); // Fade out quickly
         ctx.textAlign = 'center';
         
-        // Combo number
-        const fontSize = 24 * this.displayScale;
+        // Smaller, less intrusive display
+        const fontSize = 18 * this.displayScale;
         ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
         
-        // Flash effect
-        if (this.flashTime > 0) {
-            ctx.shadowColor = '#00ffcc';
-            ctx.shadowBlur = 20;
-        }
+        // Subtle glow only
+        ctx.shadowColor = '#00ffcc';
+        ctx.shadowBlur = 10;
         
-        // Color based on combo size
-        let color = '#ffffff';
-        if (this.combo >= 100) color = '#ff00ff';
-        else if (this.combo >= 50) color = '#ffff00';
-        else if (this.combo >= 25) color = '#ff8800';
-        else if (this.combo >= 10) color = '#00ffcc';
+        // Muted colors
+        let color = 'rgba(255, 255, 255, 0.7)';
+        if (this.combo >= 100) color = 'rgba(255, 100, 255, 0.8)';
+        else if (this.combo >= 50) color = 'rgba(255, 255, 100, 0.8)';
+        else if (this.combo >= 25) color = 'rgba(255, 150, 50, 0.8)';
         
         ctx.fillStyle = color;
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.lineWidth = 2;
         
-        ctx.strokeText(`${this.combo}x COMBO`, x, y);
-        ctx.fillText(`${this.combo}x COMBO`, x, y);
-        
-        // XP bonus indicator
-        const mult = this.getXPMultiplier();
-        if (mult > 1) {
-            ctx.font = '14px "Courier New", monospace';
-            ctx.fillStyle = '#00ff88';
-            ctx.fillText(`+${Math.floor((mult - 1) * 100)}% XP`, x, y + 20);
-        }
+        ctx.strokeText(`${this.combo}x`, x, y);
+        ctx.fillText(`${this.combo}x`, x, y);
         
         ctx.restore();
     }
