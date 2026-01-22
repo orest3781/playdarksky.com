@@ -405,34 +405,141 @@ body:has(#settings-screen.active) #scanlines-overlay {
     text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
 }
 
-.leaderboard-entries {
+.leaderboard-cards {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+}
+
+/* Card-based leaderboard entry */
+.lb-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 255, 204, 0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.lb-card:hover {
+    background: rgba(0, 255, 204, 0.08);
+    border-color: rgba(0, 255, 204, 0.4);
+}
+
+.lb-card.rank-1 {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(0, 0, 0, 0.4) 100%);
+    border-color: rgba(255, 215, 0, 0.4);
+}
+
+.lb-card.rank-2 {
+    background: linear-gradient(135deg, rgba(192, 192, 192, 0.12) 0%, rgba(0, 0, 0, 0.4) 100%);
+    border-color: rgba(192, 192, 192, 0.3);
+}
+
+.lb-card.rank-3 {
+    background: linear-gradient(135deg, rgba(205, 127, 50, 0.12) 0%, rgba(0, 0, 0, 0.4) 100%);
+    border-color: rgba(205, 127, 50, 0.3);
+}
+
+.lb-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.lb-rank-badge {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 255, 204, 0.2);
+    color: var(--primary);
+}
+
+.lb-card.rank-1 .lb-rank-badge {
+    background: linear-gradient(135deg, gold, #b8860b);
+    color: #000;
+}
+
+.lb-card.rank-2 .lb-rank-badge {
+    background: linear-gradient(135deg, silver, #888);
+    color: #000;
+}
+
+.lb-card.rank-3 .lb-rank-badge {
+    background: linear-gradient(135deg, #cd7f32, #8b4513);
+    color: #000;
+}
+
+.lb-pilot-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lb-survival-time {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-shadow: 0 0 8px rgba(0, 255, 204, 0.5);
+}
+
+.lb-card-stats {
+    display: flex;
+    gap: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+.lb-card-stat {
+    display: flex;
+    align-items: center;
     gap: 4px;
 }
 
+.lb-card-stat-icon {
+    opacity: 0.7;
+}
+
+.lb-card-times {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: rgba(0, 255, 204, 0.5);
+    padding-top: 6px;
+    border-top: 1px solid rgba(0, 255, 204, 0.1);
+}
+
+.lb-time-label {
+    opacity: 0.6;
+    margin-right: 4px;
+}
+
+/* Local leaderboard fallback - simpler row style */
 .leaderboard-row {
     display: grid;
-    grid-template-columns: 25px 1fr 50px 35px 45px;
+    grid-template-columns: 25px 1fr 50px 35px 55px;
     align-items: center;
     padding: 6px 8px;
     border-radius: 4px;
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.75rem;
     transition: all 0.2s ease;
-}
-
-.lb-name {
-    text-align: left !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.lb-date {
-    font-size: 0.65rem;
-    color: var(--text-dim);
-    letter-spacing: 0;
 }
 
 .leaderboard-row.header-row {
@@ -451,21 +558,6 @@ body:has(#settings-screen.active) #scanlines-overlay {
 
 .leaderboard-row.data-row:hover {
     background: rgba(0, 255, 204, 0.15);
-}
-
-.leaderboard-row.data-row.rank-1 {
-    background: linear-gradient(90deg, rgba(255, 215, 0, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
-    border-left: 2px solid gold;
-}
-
-.leaderboard-row.data-row.rank-2 {
-    background: linear-gradient(90deg, rgba(192, 192, 192, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
-    border-left: 2px solid silver;
-}
-
-.leaderboard-row.data-row.rank-3 {
-    background: linear-gradient(90deg, rgba(205, 127, 50, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
-    border-left: 2px solid #cd7f32;
 }
 
 .lb-rank {

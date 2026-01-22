@@ -2747,30 +2747,8 @@ class UI {
             headerTitle.textContent = isGlobal ? 'GLOBAL RANKINGS' : 'HIGH SCORES';
         }
         
-        // Keep header row, remove old data rows
-        const headerRow = container.querySelector('.header-row');
+        // Clear container
         container.innerHTML = '';
-        if (headerRow) {
-            // Update header for global (add NAME column)
-            if (isGlobal) {
-                headerRow.innerHTML = `
-                    <span class="lb-rank">#</span>
-                    <span class="lb-stat lb-name">PILOT</span>
-                    <span class="lb-stat">TIME</span>
-                    <span class="lb-stat">KILLS</span>
-                    <span class="lb-stat lb-date">DATE</span>
-                `;
-            } else {
-                headerRow.innerHTML = `
-                    <span class="lb-rank">#</span>
-                    <span class="lb-stat">TIME</span>
-                    <span class="lb-stat">LVL</span>
-                    <span class="lb-stat">KILLS</span>
-                    <span class="lb-difficulty">MODE</span>
-                `;
-            }
-            container.appendChild(headerRow);
-        }
         
         // Show/hide empty message
         if (emptyMsg) {
@@ -2779,39 +2757,68 @@ class UI {
         
         // Add entries
         leaderboard.forEach((entry, index) => {
-            const row = document.createElement('div');
-            row.className = `leaderboard-row data-row rank-${index + 1}`;
-            
-            // Format time as MM:SS
+            // Format survival time as MM:SS
             const time = entry.time || 0;
             const minutes = Math.floor(time / 60);
             const seconds = Math.floor(time % 60);
             const timeStr = `${minutes}:${String(seconds).padStart(2, '0')}`;
             
             if (isGlobal) {
-                // Global leaderboard shows player name and date
-                const playerName = (entry.playerName || 'Anonymous').substring(0, 12);
+                // Card-based design for global leaderboard
+                const card = document.createElement('div');
+                card.className = `lb-card rank-${index + 1}`;
                 
-                // Format date as MM/DD HH:MM
-                let dateStr = '--';
+                const playerName = (entry.playerName || 'Anonymous').substring(0, 14);
+                
+                // Calculate start and end times from created_at (end time) and survival duration
+                let startTimeStr = '--:--';
+                let endTimeStr = '--:--';
                 if (entry.date) {
-                    const d = new Date(entry.date);
-                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const hours = String(d.getHours()).padStart(2, '0');
-                    const mins = String(d.getMinutes()).padStart(2, '0');
-                    dateStr = `${month}/${day} ${hours}:${mins}`;
+                    const endDate = new Date(entry.date);
+                    const startDate = new Date(endDate.getTime() - (time * 1000));
+                    
+                    const formatTime = (d) => {
+                        const h = String(d.getHours()).padStart(2, '0');
+                        const m = String(d.getMinutes()).padStart(2, '0');
+                        return `${h}:${m}`;
+                    };
+                    const formatDate = (d) => {
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        return `${month}/${day}`;
+                    };
+                    
+                    startTimeStr = `${formatDate(startDate)} ${formatTime(startDate)}`;
+                    endTimeStr = `${formatDate(endDate)} ${formatTime(endDate)}`;
                 }
                 
-                row.innerHTML = `
-                    <span class="lb-rank">${index + 1}</span>
-                    <span class="lb-stat lb-name">${playerName}</span>
-                    <span class="lb-stat">${timeStr}</span>
-                    <span class="lb-stat">${Utils.formatNumber(entry.kills || 0)}</span>
-                    <span class="lb-stat lb-date">${dateStr}</span>
+                // Difficulty badge
+                const diffId = entry.difficulty || 'normal';
+                const diffDisplay = diffId.charAt(0).toUpperCase();
+                
+                card.innerHTML = `
+                    <div class="lb-card-top">
+                        <span class="lb-rank-badge">${index + 1}</span>
+                        <span class="lb-pilot-name">${playerName}</span>
+                        <span class="lb-survival-time">${timeStr}</span>
+                    </div>
+                    <div class="lb-card-stats">
+                        <span class="lb-card-stat"><span class="lb-card-stat-icon">💀</span>${Utils.formatNumber(entry.kills || 0)}</span>
+                        <span class="lb-card-stat"><span class="lb-card-stat-icon">⬆</span>Lv.${entry.level || 1}</span>
+                        <span class="lb-card-stat"><span class="lb-card-stat-icon">⚡</span>${diffDisplay}</span>
+                    </div>
+                    <div class="lb-card-times">
+                        <span><span class="lb-time-label">START</span>${startTimeStr}</span>
+                        <span><span class="lb-time-label">END</span>${endTimeStr}</span>
+                    </div>
                 `;
+                
+                container.appendChild(card);
             } else {
-                // Local leaderboard shows difficulty
+                // Simple row for local leaderboard
+                const row = document.createElement('div');
+                row.className = `leaderboard-row data-row rank-${index + 1}`;
+                
                 const diffId = entry.difficulty || 'normal';
                 const diffClass = `diff-${diffId}`;
                 const diffDisplay = diffId.charAt(0).toUpperCase() + diffId.slice(1);
@@ -2822,9 +2829,9 @@ class UI {
                     <span class="lb-stat">${Utils.formatNumber(entry.kills || 0)}</span>
                     <span class="lb-difficulty ${diffClass}">${diffDisplay}</span>
                 `;
+                
+                container.appendChild(row);
             }
-            
-            container.appendChild(row);
         });
     }
     
