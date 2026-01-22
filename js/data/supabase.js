@@ -283,17 +283,34 @@ class SupabaseService {
         return Math.floor((data.time * 10 + data.kills * 5 + data.level * 100) * mult);
     }
 
-    // Get global leaderboard (top scores)
+    // Get global leaderboard (top scores, best per player)
     async getGlobalLeaderboard(limit = 10, orderBy = 'score') {
         if (!this.client) return { data: [], error: 'Not initialized' };
 
+        // Fetch more entries to ensure we get enough unique players
         const { data, error } = await this.client
             .from('leaderboard')
             .select('*')
             .order(orderBy, { ascending: false })
-            .limit(limit);
+            .limit(limit * 5);
 
-        return { data: data || [], error };
+        if (error || !data) return { data: data || [], error };
+
+        // Filter to best score per unique player
+        const bestByPlayer = new Map();
+        for (const entry of data) {
+            const key = entry.player_name || entry.player_id || 'anonymous';
+            if (!bestByPlayer.has(key) || entry.score > bestByPlayer.get(key).score) {
+                bestByPlayer.set(key, entry);
+            }
+        }
+
+        // Sort by score and limit
+        const uniqueEntries = Array.from(bestByPlayer.values())
+            .sort((a, b) => b.score - a.score)
+            .slice(0, limit);
+
+        return { data: uniqueEntries, error: null };
     }
 
     // Get leaderboard filtered by difficulty
