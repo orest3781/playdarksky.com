@@ -2053,17 +2053,23 @@ class Player {
     drawWeaponIndicators(ctx, screenX, screenY) {
         if (!this.weapons || this.weapons.length === 0) return;
         
+        // Filter out the starting weapon - only show picked-up weapons
+        const displayWeapons = this.weapons.filter(w => w && w.data && !w.isStartingWeapon);
+        if (displayWeapons.length === 0) return;
+        
         const orbitRadius = 50; // Distance from player
         const iconSize = 14;
-        const numWeapons = this.weapons.length;
+        const numWeapons = displayWeapons.length;
+        const orbitSpeed = 0.5; // Rotations per second
+        const baseAngle = this.game.gameTime * orbitSpeed * Math.PI * 2; // Rotating base angle
         
         ctx.save();
         
         for (let i = 0; i < numWeapons; i++) {
-            const weapon = this.weapons[i];
-            if (!weapon || !weapon.data) continue;
+            const weapon = displayWeapons[i];
             
-            const angle = (i / numWeapons) * Math.PI * 2 - Math.PI / 2; // Start at top
+            // Evenly space weapons and add rotation
+            const angle = baseAngle + (i / numWeapons) * Math.PI * 2;
             const x = screenX + Math.cos(angle) * orbitRadius;
             const y = screenY + Math.sin(angle) * orbitRadius;
             
