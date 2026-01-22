@@ -2768,6 +2768,13 @@ class UI {
                 const card = document.createElement('div');
                 card.className = `lb-card rank-${index + 1}`;
                 
+                // Check if this is the current user's entry
+                const currentUserName = window.supabaseService?.getDisplayName?.() || '';
+                const isOwnEntry = currentUserName && entry.playerName === currentUserName;
+                if (isOwnEntry) {
+                    card.classList.add('own-entry');
+                }
+                
                 const playerName = (entry.playerName || 'Anonymous').substring(0, 14);
                 
                 // Calculate start and end times from created_at (end time) and survival duration
@@ -2776,6 +2783,7 @@ class UI {
                 if (entry.date) {
                     const endDate = new Date(entry.date);
                     const startDate = new Date(endDate.getTime() - (time * 1000));
+                    const now = new Date();
                     
                     const formatTime = (d) => {
                         const h = String(d.getHours()).padStart(2, '0');
@@ -2788,24 +2796,35 @@ class UI {
                         return `${month}/${day}`;
                     };
                     
+                    // Check if same day as end date to avoid redundant date
+                    const sameDay = startDate.toDateString() === endDate.toDateString();
                     startTimeStr = `${formatDate(startDate)} ${formatTime(startDate)}`;
-                    endTimeStr = `${formatDate(endDate)} ${formatTime(endDate)}`;
+                    endTimeStr = sameDay ? formatTime(endDate) : `${formatDate(endDate)} ${formatTime(endDate)}`;
                 }
                 
-                // Difficulty badge
+                // Difficulty - show full name
                 const diffId = entry.difficulty || 'normal';
-                const diffDisplay = diffId.charAt(0).toUpperCase();
+                const diffNames = {
+                    'easy': 'EASY',
+                    'normal': 'NORMAL', 
+                    'hard': 'HARD',
+                    'nightmare': 'NIGHTMARE',
+                    'impossible': 'IMPOSSIBLE'
+                };
+                const diffDisplay = diffNames[diffId] || 'NORMAL';
                 
                 card.innerHTML = `
                     <div class="lb-card-top">
                         <span class="lb-rank-badge">${index + 1}</span>
-                        <span class="lb-pilot-name">${playerName}</span>
-                        <span class="lb-survival-time">${timeStr}</span>
+                        <span class="lb-pilot-name">${playerName}${isOwnEntry ? ' <span class="own-badge">YOU</span>' : ''}</span>
+                        <span class="lb-survival-time">${timeStr}<span class="lb-time-suffix">SURVIVED</span></span>
                     </div>
                     <div class="lb-card-stats">
-                        <span class="lb-card-stat"><span class="lb-card-stat-icon">💀</span>${Utils.formatNumber(entry.kills || 0)}</span>
-                        <span class="lb-card-stat"><span class="lb-card-stat-icon">⬆</span>Lv.${entry.level || 1}</span>
-                        <span class="lb-card-stat"><span class="lb-card-stat-icon">⚡</span>${diffDisplay}</span>
+                        <span class="lb-card-stat">💀 ${Utils.formatNumber(entry.kills || 0)}</span>
+                        <span class="lb-card-stat-sep">•</span>
+                        <span class="lb-card-stat">LV ${entry.level || 1}</span>
+                        <span class="lb-card-stat-sep">•</span>
+                        <span class="lb-card-stat lb-diff-${diffId}">${diffDisplay}</span>
                     </div>
                     <div class="lb-card-times">
                         <span><span class="lb-time-label">START</span>${startTimeStr}</span>
