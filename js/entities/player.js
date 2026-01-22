@@ -560,10 +560,21 @@ class Player {
         // Check if already have this weapon
         const existing = this.weapons.find(w => w.id === weaponId);
         if (existing) {
-            // Level up existing weapon
+            // Refresh duration (even if max level)
+            const baseDuration = GAME_CONFIG.WEAPON_BASE_DURATION || 45;
+            const durationPerLevel = GAME_CONFIG.WEAPON_DURATION_PER_LEVEL || 10;
+            const maxDuration = baseDuration + durationPerLevel * (existing.level - 1);
+            existing.remainingDuration = maxDuration;
+            existing.maxDuration = maxDuration;
+            
+            // Level up existing weapon if not maxed
             if (existing.level < WEAPONS[weaponId].maxLevel) {
                 existing.level++;
                 this.updateWeaponStats(existing);
+                
+                // Update duration for new level
+                existing.maxDuration = baseDuration + durationPerLevel * (existing.level - 1);
+                existing.remainingDuration = existing.maxDuration;
                 
                 // Check for evolution when weapon reaches max level
                 if (existing.level >= WEAPONS[weaponId].maxLevel) {
@@ -571,17 +582,27 @@ class Player {
                 }
                 return true;
             }
-            return false; // Already maxed
+            // Return true even if maxed - we refreshed duration
+            return true;
         }
         
         // Add new weapon if space
         if (this.weapons.length < this.maxWeapons) {
             const weaponData = WEAPONS[weaponId];
+            
+            // Calculate weapon duration
+            const isStartingWeapon = this.weapons.length === 0 && GAME_CONFIG.STARTING_WEAPON_PERMANENT;
+            const baseDuration = GAME_CONFIG.WEAPON_BASE_DURATION || 45;
+            
             const weapon = {
                 id: weaponId,
                 data: weaponData,
                 level: 1,
                 cooldown: 0,
+                // Duration system
+                remainingDuration: isStartingWeapon ? Infinity : baseDuration,
+                maxDuration: baseDuration,
+                isStartingWeapon: isStartingWeapon,
                 // Calculated stats
                 damage: weaponData.baseDamage,
                 radius: weaponData.baseRadius || 0,
@@ -1108,6 +1129,32 @@ class Player {
         // OVERDRIVE power-up: 3x attack speed
         const attackSpeedMult = this.game.isPowerupActive('overdrive') ? 
             POWERUPS.overdrive.attackSpeedMult : 1;
+        
+        // Update weapon durations and remove expired weapons
+        if (GAME_CONFIG.WEAPON_DURATION_ENABLED) {
+            for (let i = this.weapons.length - 1; i >= 0; i--) {
+                const weapon = this.weapons[i];
+                
+                // Skip permanent weapons (starting weapon)
+                if (weapon.isStartingWeapon || weapon.remainingDuration === Infinity) continue;
+                
+                // Count down duration
+                weapon.remainingDuration -= dt;
+                
+                // Warning when low
+                const warningThreshold = GAME_CONFIG.WEAPON_WARNING_THRESHOLD || 10;
+                if (weapon.remainingDuration <= warningThreshold && weapon.remainingDuration > warningThreshold - dt) {
+                    this.game.ui?.showWarning(`${weapon.data.name} EXPIRING SOON!`, 'warning');
+                }
+                
+                // Remove expired weapon
+                if (weapon.remainingDuration <= 0) {
+                    this.game.ui?.showWarning(`${weapon.data.name} EXPIRED`, 'alert');
+                    this.game.playSound?.('weaponExpire');
+                    this.weapons.splice(i, 1);
+                }
+            }
+        }
         
         for (const weapon of this.weapons) {
             weapon.cooldown -= dt * 1000 * attackSpeedMult;

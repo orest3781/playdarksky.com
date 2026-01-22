@@ -3882,6 +3882,7 @@ body:has(#settings-screen.active) #scanlines-overlay {
     font-size: 1.4rem;
     position: relative;
     color: #00ff00;
+    overflow: hidden;
 }
 
 .weapon-slot.active {
@@ -3889,13 +3890,37 @@ body:has(#settings-screen.active) #scanlines-overlay {
     background: rgba(0, 255, 0, 0.1);
 }
 
+.weapon-slot.expiring {
+    border-color: #ff6600;
+    animation: weapon-expire-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes weapon-expire-pulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(255, 102, 0, 0.3); }
+    50% { box-shadow: 0 0 12px rgba(255, 102, 0, 0.8); }
+}
+
+.weapon-duration-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #00ff00, #88ff88);
+    transition: width 0.3s linear;
+}
+
+.weapon-slot.expiring .weapon-duration-bar {
+    background: linear-gradient(90deg, #ff3300, #ff6600);
+}
+
 .weapon-level {
     position: absolute;
-    bottom: 2px;
+    bottom: 5px;
     right: 3px;
     font-size: 0.65rem;
     font-family: 'Courier New', monospace;
     color: #00ff00;
+    z-index: 1;
 }
 
 /* Vignette Effect */

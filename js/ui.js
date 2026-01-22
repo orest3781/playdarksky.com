@@ -2110,10 +2110,20 @@ class UI {
         for (let i = 0; i < player.maxWeapons; i++) {
             const weapon = player.weapons[i];
             if (weapon) {
+                // Calculate duration percentage
+                const hasDuration = GAME_CONFIG.WEAPON_DURATION_ENABLED && 
+                                   !weapon.isStartingWeapon && 
+                                   weapon.remainingDuration !== Infinity;
+                const durationPct = hasDuration ? 
+                    Math.max(0, (weapon.remainingDuration / weapon.maxDuration) * 100) : 100;
+                const isLow = hasDuration && weapon.remainingDuration <= (GAME_CONFIG.WEAPON_WARNING_THRESHOLD || 10);
+                const durationText = hasDuration ? Math.ceil(weapon.remainingDuration) + 's' : '∞';
+                
                 html += `
-                    <div class="weapon-slot active" title="${weapon.data.name} Lv${weapon.level}">
+                    <div class="weapon-slot active ${isLow ? 'expiring' : ''}" title="${weapon.data.name} Lv${weapon.level}${hasDuration ? ' - ' + durationText + ' left' : ''}">
                         ${weapon.data.icon}
                         <span class="weapon-level">${weapon.level}</span>
+                        ${hasDuration ? `<div class="weapon-duration-bar" style="width: ${durationPct}%"></div>` : ''}
                     </div>
                 `;
             } else {

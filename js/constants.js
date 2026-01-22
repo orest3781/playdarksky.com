@@ -52,7 +52,14 @@ const GAME_CONFIG = {
     SALVAGE_REROLL_COSTS: [10, 25, 50, 100], // Cost per reroll (index = reroll count)
     SALVAGE_REROLL_MAX: 4,                    // Max rerolls per pickup
     UPGRADE_CHOICES_COUNT: 3,                 // Number of choices shown
-    UPGRADE_PICKUP_TIMEOUT: 20                // Seconds before upgrade disappears
+    UPGRADE_PICKUP_TIMEOUT: 20,               // Seconds before upgrade disappears
+    
+    // Weapon Duration System
+    WEAPON_DURATION_ENABLED: true,           // Weapons expire and need refreshing
+    WEAPON_BASE_DURATION: 45,                // Base duration in seconds
+    WEAPON_DURATION_PER_LEVEL: 10,           // Extra seconds per weapon level
+    WEAPON_WARNING_THRESHOLD: 10,            // Show warning when this many seconds left
+    STARTING_WEAPON_PERMANENT: true          // Starting weapon never expires
 };
 
 // =====================================================
