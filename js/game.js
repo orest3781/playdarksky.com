@@ -1905,6 +1905,9 @@ class Game {
             const screenX = drone.x - this.camera.x;
             const screenY = drone.y - this.camera.y;
             
+            // Safety check for non-finite coordinates
+            if (!isFinite(screenX) || !isFinite(screenY)) continue;
+            
             ctx.save();
             
             // Outer glow
@@ -2908,8 +2911,14 @@ class Game {
     }
     
     drawActivePowerupEffects(ctx) {
+        if (!this.player) return;
+        
         const playerX = this.player.x - this.camera.x;
         const playerY = this.player.y - this.camera.y;
+        
+        // Safety check for non-finite coordinates
+        if (!isFinite(playerX) || !isFinite(playerY)) return;
+        
         const time = performance.now() * 0.001;
         
         // OVERDRIVE: Fiery aura
@@ -3499,6 +3508,9 @@ class Game {
             const screenX = bomb.x - this.camera.x;
             const screenY = bomb.y - this.camera.y;
             
+            // Safety check for non-finite coordinates
+            if (!isFinite(screenX) || !isFinite(screenY)) continue;
+            
             // Outer pull ring
             ctx.save();
             ctx.strokeStyle = bomb.color;
@@ -3609,6 +3621,9 @@ class Game {
         for (const zone of this.hazardZones) {
             const screenX = zone.x - this.camera.x;
             const screenY = zone.y - this.camera.y;
+            
+            // Safety check for non-finite values
+            if (!isFinite(screenX) || !isFinite(screenY) || !isFinite(zone.radius)) continue;
             
             ctx.save();
             

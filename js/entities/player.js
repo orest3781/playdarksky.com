@@ -1578,6 +1578,9 @@ class Player {
         const screenX = this.x - camera.x;
         const screenY = this.y - camera.y;
         
+        // Safety check for non-finite coordinates
+        if (!isFinite(screenX) || !isFinite(screenY)) return;
+        
         // Draw weapon effects first
         this.drawWeaponEffects(ctx, camera);
         
@@ -1953,6 +1956,9 @@ class Player {
             for (const effect of weapon.activeEffects) {
                 const screenX = effect.x - camera.x;
                 const screenY = effect.y - camera.y;
+                
+                // Safety check for non-finite values
+                if (!isFinite(screenX) || !isFinite(screenY) || !isFinite(effect.radius)) continue;
                 
                 ctx.globalAlpha = 0.3;
                 const gradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, effect.radius);
