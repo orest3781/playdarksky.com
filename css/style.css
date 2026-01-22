@@ -3860,6 +3860,76 @@ body:has(#settings-screen.active) #scanlines-overlay {
     text-shadow: 0 0 10px rgba(255, 220, 0, 0.7);
 }
 
+/* Active Weapons List - Left side text display */
+#active-weapons-list {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.active-weapon-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.6);
+    border-left: 3px solid #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #00ff00;
+    text-shadow: 0 0 4px rgba(0, 255, 0, 0.5);
+    white-space: nowrap;
+}
+
+.active-weapon-item.expiring {
+    border-left-color: #ff6600;
+    color: #ff9900;
+    animation: weapon-item-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes weapon-item-pulse {
+    0%, 100% { background: rgba(0, 0, 0, 0.6); }
+    50% { background: rgba(255, 80, 0, 0.3); }
+}
+
+.active-weapon-item .weapon-icon {
+    font-size: 1.1rem;
+}
+
+.active-weapon-item .weapon-name {
+    flex: 1;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.active-weapon-item .weapon-level {
+    color: #88ff88;
+    font-size: 0.75rem;
+}
+
+.active-weapon-item .weapon-timer {
+    font-weight: bold;
+    min-width: 35px;
+    text-align: right;
+}
+
+.active-weapon-item .weapon-timer.low {
+    color: #ff4400;
+    animation: timer-flash 0.3s ease-in-out infinite;
+}
+
+@keyframes timer-flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 /* Bottom Weapon Bar - HIDDEN, using unified bottom HUD */
 #flir-weapon-bar {
     display: none;

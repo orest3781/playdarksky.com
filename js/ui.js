@@ -53,6 +53,7 @@ class UI {
             dashKills: document.getElementById('dash-kills'),
             dashGold: document.getElementById('dash-gold'),
             dashShips: document.getElementById('dash-ships'),
+            activeWeaponsList: document.getElementById('active-weapons-list'),
             
             // Overlays
             pauseMenu: document.getElementById('pause-menu'),
@@ -1270,6 +1271,7 @@ class UI {
         
         // Weapons
         this.updateWeaponSlots();
+        this.updateActiveWeaponsList();
         
         // Abilities (1-5 keys)
         this.updateAbilityBar();
@@ -2136,6 +2138,45 @@ class UI {
         }
         
         this.elements.weaponSlots.innerHTML = html;
+    }
+    
+    updateActiveWeaponsList() {
+        if (!this.elements.activeWeaponsList) return;
+        
+        const player = this.game.player;
+        if (!player || !player.weapons) {
+            this.elements.activeWeaponsList.innerHTML = '';
+            return;
+        }
+        
+        // Filter to only show non-starting weapons with duration
+        const activeWeapons = player.weapons.filter(w => 
+            w && w.data && !w.isStartingWeapon
+        );
+        
+        if (activeWeapons.length === 0) {
+            this.elements.activeWeaponsList.innerHTML = '';
+            return;
+        }
+        
+        let html = '';
+        for (const weapon of activeWeapons) {
+            const hasDuration = GAME_CONFIG.WEAPON_DURATION_ENABLED && 
+                               weapon.remainingDuration !== Infinity;
+            const timeLeft = hasDuration ? Math.ceil(weapon.remainingDuration) : null;
+            const isLow = hasDuration && timeLeft <= (GAME_CONFIG.WEAPON_WARNING_THRESHOLD || 10);
+            
+            html += `
+                <div class="active-weapon-item ${isLow ? 'expiring' : ''}">
+                    <span class="weapon-icon">${weapon.data.icon}</span>
+                    <span class="weapon-name">${weapon.data.name}</span>
+                    <span class="weapon-level">Lv${weapon.level}</span>
+                    ${hasDuration ? `<span class="weapon-timer ${isLow ? 'low' : ''}">${timeLeft}s</span>` : ''}
+                </div>
+            `;
+        }
+        
+        this.elements.activeWeaponsList.innerHTML = html;
     }
     
     populateHangar() {
