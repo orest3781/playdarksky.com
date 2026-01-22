@@ -2104,6 +2104,10 @@ class UI {
     }
     
     updateWeaponSlots() {
+        // Weapon slots removed from HUD - now drawn around player
+        // Keep this method for compatibility but skip if element doesn't exist
+        if (!this.elements.weaponSlots) return;
+        
         const player = this.game.player;
         let html = '';
         

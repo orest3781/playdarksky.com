@@ -2051,7 +2051,7 @@ class Player {
     
     // Draw small weapon icons orbiting the player
     drawWeaponIndicators(ctx, screenX, screenY) {
-        if (this.weapons.length === 0) return;
+        if (!this.weapons || this.weapons.length === 0) return;
         
         const orbitRadius = 50; // Distance from player
         const iconSize = 14;
@@ -2061,6 +2061,8 @@ class Player {
         
         for (let i = 0; i < numWeapons; i++) {
             const weapon = this.weapons[i];
+            if (!weapon || !weapon.data) continue;
+            
             const angle = (i / numWeapons) * Math.PI * 2 - Math.PI / 2; // Start at top
             const x = screenX + Math.cos(angle) * orbitRadius;
             const y = screenY + Math.sin(angle) * orbitRadius;
@@ -2079,12 +2081,12 @@ class Player {
             ctx.fill();
             
             // Border
-            ctx.strokeStyle = isLow ? '#ff6600' : weapon.data.color || '#00ff00';
+            ctx.strokeStyle = isLow ? '#ff6600' : (weapon.data.color || '#00ff00');
             ctx.lineWidth = 2;
             ctx.stroke();
             
             // Duration arc (like a pie timer)
-            if (hasDuration) {
+            if (hasDuration && weapon.maxDuration > 0) {
                 const pct = weapon.remainingDuration / weapon.maxDuration;
                 ctx.strokeStyle = isLow ? '#ff3300' : '#00ff88';
                 ctx.lineWidth = 3;
@@ -2099,7 +2101,7 @@ class Player {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(weapon.data.icon, x, y);
+            ctx.fillText(weapon.data.icon || '?', x, y);
             
             // Level badge (small)
             if (weapon.level > 1) {
