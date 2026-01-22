@@ -3847,6 +3847,11 @@ class Game {
         // === SUBMIT TO GLOBAL LEADERBOARD (Supabase) ===
         if (window.supabaseService?.initialized) {
             window.supabaseService.submitScore(scoreData);
+            
+            // Sync stats to cloud if logged in
+            if (window.supabaseService.getUser()) {
+                window.supabaseService.syncStats(this.saveData.stats);
+            }
         }
         
         SaveManager.save(this.saveData);

@@ -2267,6 +2267,21 @@ body:has(#settings-screen.active) #scanlines-overlay {
     left: 0;
 }
 
+/* FAQ List Styling */
+.faq-list li {
+    padding: 10px 0;
+    padding-left: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.faq-list li:last-child {
+    border-bottom: none;
+}
+
+.faq-list li strong {
+    color: var(--primary);
+}
+
 /* Records in Options Tab */
 .options-tab-content .records-container {
     padding: 20px 0;
@@ -2372,6 +2387,98 @@ body:has(#settings-screen.active) #scanlines-overlay {
     color: var(--text-dim);
     font-size: 0.75rem;
     margin-top: 8px;
+}
+
+/* Records Login Prompt */
+.records-login-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 25px;
+    background: linear-gradient(135deg, rgba(0, 255, 204, 0.05) 0%, rgba(0, 100, 200, 0.05) 100%);
+    border: 1px dashed var(--primary);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.records-login-icon {
+    font-size: 2rem;
+    opacity: 0.7;
+}
+
+.records-login-prompt p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.records-login-prompt .btn-show-login {
+    padding: 10px 30px;
+}
+
+/* Recent Runs List */
+.recent-runs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.recent-runs-empty {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 30px;
+    font-style: italic;
+}
+
+.recent-run-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.recent-run-item:hover {
+    border-color: var(--primary);
+}
+
+.recent-run-item.escaped {
+    border-left: 3px solid #44ff44;
+}
+
+.recent-run-item.failed {
+    border-left: 3px solid #ff4444;
+}
+
+.recent-run-status {
+    font-size: 1.2rem;
+    width: 30px;
+    text-align: center;
+}
+
+.recent-run-info {
+    flex: 1;
+}
+
+.recent-run-time {
+    color: var(--primary);
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.recent-run-details {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 2px;
+}
+
+.recent-run-date {
+    color: var(--text-dim);
+    font-size: 0.8rem;
 }
 
 /* =====================================================

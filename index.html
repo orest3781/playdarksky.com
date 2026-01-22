@@ -494,20 +494,31 @@
         <!-- Records Tab -->
         <div class="options-tab-content" id="tab-records">
             <div class="records-container">
-                <!-- Lifetime Stats -->
+                <!-- Login prompt for non-logged in users -->
+                <div class="records-login-prompt" id="records-login-prompt">
+                    <div class="records-login-icon">🔒</div>
+                    <p>Log in to sync your stats across devices</p>
+                    <button class="btn btn-primary btn-show-login">SIGN IN</button>
+                </div>
+                
+                <!-- Pilot Stats (Account Stats) -->
                 <div class="records-section">
-                    <h3 class="records-section-title">LIFETIME STATISTICS</h3>
+                    <h3 class="records-section-title">PILOT STATS</h3>
                     <div class="records-grid">
                         <div class="record-item">
-                            <span class="record-label">Total Play Time</span>
+                            <span class="record-label">Total Flight Time</span>
                             <span class="record-value" id="rec-total-time">0:00:00</span>
                         </div>
                         <div class="record-item">
-                            <span class="record-label">Missions Completed</span>
+                            <span class="record-label">Successful Escapes</span>
                             <span class="record-value" id="rec-runs-completed">0</span>
                         </div>
                         <div class="record-item">
-                            <span class="record-label">Total Kills</span>
+                            <span class="record-label">Total Missions</span>
+                            <span class="record-value" id="rec-runs-attempted">0</span>
+                        </div>
+                        <div class="record-item">
+                            <span class="record-label">Hostiles Neutralized</span>
                             <span class="record-value" id="rec-total-kills">0</span>
                         </div>
                         <div class="record-item">
@@ -518,29 +529,36 @@
                             <span class="record-label">Bosses Defeated</span>
                             <span class="record-value" id="rec-bosses">0</span>
                         </div>
-                        <div class="record-item">
-                            <span class="record-label">Total Damage</span>
-                            <span class="record-value" id="rec-damage">0</span>
-                        </div>
                     </div>
                 </div>
                 
-                <!-- Best Runs -->
+                <!-- Personal Bests -->
                 <div class="records-section">
                     <h3 class="records-section-title">PERSONAL BESTS</h3>
                     <div class="best-runs-grid">
                         <div class="best-run-card">
-                            <div class="best-run-title">Longest Run</div>
+                            <div class="best-run-icon">⏱️</div>
+                            <div class="best-run-title">Longest Survival</div>
                             <div class="best-run-value" id="best-survival">--:--</div>
                         </div>
                         <div class="best-run-card">
+                            <div class="best-run-icon">📈</div>
                             <div class="best-run-title">Highest Level</div>
                             <div class="best-run-value" id="best-level">0</div>
                         </div>
                         <div class="best-run-card">
+                            <div class="best-run-icon">💀</div>
                             <div class="best-run-title">Most Kills</div>
                             <div class="best-run-value" id="best-kills">0</div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Runs -->
+                <div class="records-section">
+                    <h3 class="records-section-title">RECENT MISSIONS</h3>
+                    <div class="recent-runs-list" id="recent-runs-list">
+                        <div class="recent-runs-empty">No missions recorded yet</div>
                     </div>
                 </div>
             </div>
@@ -551,14 +569,14 @@
             <div class="howtoplay-container">
                 <div class="howtoplay-section">
                     <h3>OBJECTIVE</h3>
-                    <p>You are a UFO being hunted by military forces. Evade capture for 30 minutes to escape. Collect salvage to level up and enhance your defensive systems.</p>
+                    <p>You are a UAP (Unidentified Aerial Phenomenon) being hunted by military forces. Survive for 30 minutes to escape Earth. Destroy enemies to collect salvage and level up your weapons.</p>
                 </div>
                 
                 <div class="howtoplay-section">
                     <h3>CONTROLS</h3>
                     <div class="controls-grid">
                         <div class="control-item"><span class="key">WASD</span> Move</div>
-                        <div class="control-item"><span class="key">SPACE</span> Dash</div>
+                        <div class="control-item"><span class="key">SPACE</span> Dash (3 charges)</div>
                         <div class="control-item"><span class="key">Q</span> Overdrive</div>
                         <div class="control-item"><span class="key">E</span> Shield</div>
                         <div class="control-item"><span class="key">F</span> Chrono Burst</div>
@@ -568,13 +586,36 @@
                 </div>
                 
                 <div class="howtoplay-section">
-                    <h3>TIPS</h3>
+                    <h3>GAMEPLAY</h3>
                     <ul class="tips-list">
-                        <li>Defensive systems fire automatically - focus on evasion</li>
-                        <li>Collect green salvage orbs to upgrade faster</li>
-                        <li>Abilities (Q/E/F/R) must be found as drops</li>
-                        <li>Visit the HANGAR to unlock new craft</li>
-                        <li>Buy permanent UPGRADES between escape attempts</li>
+                        <li><strong>Weapons fire automatically</strong> - focus on positioning and dodging</li>
+                        <li><strong>Dash (SPACE)</strong> is always available with 3 energy charges that regenerate</li>
+                        <li><strong>Power-ups (Q/E/F/R)</strong> drop from enemies and are one-time use</li>
+                        <li><strong>Green salvage orbs</strong> give XP - level up to choose new weapons or upgrades</li>
+                        <li><strong>5 Phases</strong> escalate difficulty: Detected → Engaged → Reinforced → Scramble → Containment</li>
+                    </ul>
+                </div>
+                
+                <div class="howtoplay-section">
+                    <h3>POWER-UPS</h3>
+                    <ul class="tips-list">
+                        <li><strong>⚡ Overdrive (Q)</strong> - 3x fire rate, 2x damage for 8 seconds</li>
+                        <li><strong>🛡️ Shield (E)</strong> - Invulnerable for 6 seconds, damages nearby enemies</li>
+                        <li><strong>⏱️ Chrono Burst (F)</strong> - Slow enemies, speed up, magnetize XP for 8 seconds</li>
+                        <li><strong>⭐ Ultimate (R)</strong> - Your chosen ultimate ability (select before run)</li>
+                    </ul>
+                </div>
+                
+                <div class="howtoplay-section">
+                    <h3>FAQ</h3>
+                    <ul class="tips-list faq-list">
+                        <li><strong>How do I shoot?</strong> Weapons fire automatically at nearby enemies.</li>
+                        <li><strong>Why can't I use Q/E/F/R?</strong> These must drop from enemies first - they're one-time use items.</li>
+                        <li><strong>What are the glowing icons?</strong> Power-up drops. Walk over them to collect.</li>
+                        <li><strong>How do I unlock new craft?</strong> Visit the HANGAR from the main menu.</li>
+                        <li><strong>What is Resonance?</strong> Currency earned each run. Spend it on permanent UPGRADES.</li>
+                        <li><strong>What does the Ultimate do?</strong> Choose your Ultimate before starting - Droplet makes you invincible and ram enemies, Replicators spawn attack drones.</li>
+                        <li><strong>How do I survive longer?</strong> Keep moving, use Dash to dodge, prioritize weapon upgrades that match your playstyle.</li>
                     </ul>
                 </div>
             </div>

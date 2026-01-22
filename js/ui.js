@@ -316,6 +316,14 @@ class UI {
             loginModal?.classList.remove('hidden');
         });
         
+        // Open login modal from Records tab
+        document.querySelectorAll('.btn-show-login').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.game.playSound?.('click');
+                loginModal?.classList.remove('hidden');
+            });
+        });
+        
         // Close login modal
         closeLoginBtn?.addEventListener('click', () => {
             this.game.playSound?.('click');
@@ -2578,18 +2586,69 @@ class UI {
     // =====================================================
     // RECORDS SCREEN
     // =====================================================
-    populateRecords() {
+    async populateRecords() {
         const data = this.game.saveData;
-        const stats = data.stats || {};
-        const bestRuns = data.bestRuns || {};
+        const localStats = data.stats || {};
+        const localBestRuns = data.bestRuns || {};
         
-        // Lifetime statistics
+        // Helper to set record values
         const setRecord = (id, value) => {
             const el = document.getElementById(id);
             if (el) el.textContent = value;
         };
         
-        // Format total play time
+        // Check if user is logged in
+        const user = window.supabaseService?.getUser();
+        const loginPrompt = document.getElementById('records-login-prompt');
+        
+        if (loginPrompt) {
+            loginPrompt.style.display = user ? 'none' : 'flex';
+        }
+        
+        // Use cloud stats if logged in, otherwise local
+        let stats = localStats;
+        let bestRuns = localBestRuns;
+        let recentRuns = [];
+        
+        if (user && window.supabaseService?.initialized) {
+            // Try to get cloud stats
+            const { data: cloudStats } = await window.supabaseService.getPlayerStats();
+            if (cloudStats) {
+                stats = {
+                    totalPlayTime: cloudStats.total_play_time || 0,
+                    runsCompleted: cloudStats.runs_completed || 0,
+                    runsAttempted: cloudStats.runs_attempted || 0,
+                    totalKills: cloudStats.total_kills || 0,
+                    elitesDefeated: cloudStats.elites_defeated || 0,
+                    bossesDefeated: cloudStats.bosses_defeated || 0,
+                    highestLevel: cloudStats.highest_level || 0,
+                    longestSurvival: cloudStats.longest_survival || 0
+                };
+            }
+            
+            // Get personal bests from leaderboard
+            const { data: personalBests } = await window.supabaseService.getPersonalBests(10);
+            if (personalBests && personalBests.length > 0) {
+                // Find best stats from leaderboard entries
+                let maxSurvival = 0, maxLevel = 0, maxKills = 0;
+                personalBests.forEach(run => {
+                    if (run.time_survived > maxSurvival) maxSurvival = run.time_survived;
+                    if (run.level_reached > maxLevel) maxLevel = run.level_reached;
+                    if (run.kills > maxKills) maxKills = run.kills;
+                });
+                bestRuns = {
+                    longestSurvival: { time: maxSurvival },
+                    highestLevel: { level: maxLevel },
+                    mostKills: { kills: maxKills }
+                };
+            }
+            
+            // Get recent runs
+            const { data: recent } = await window.supabaseService.getRecentRuns(5);
+            recentRuns = recent || [];
+        }
+        
+        // Populate Pilot Stats
         const totalSeconds = stats.totalPlayTime || 0;
         const hours = Math.floor(totalSeconds / 3600);
         const mins = Math.floor((totalSeconds % 3600) / 60);
@@ -2597,39 +2656,53 @@ class UI {
         setRecord('rec-total-time', `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
         
         setRecord('rec-runs-completed', Utils.formatNumber(stats.runsCompleted || 0));
+        setRecord('rec-runs-attempted', Utils.formatNumber(stats.runsAttempted || 0));
         setRecord('rec-total-kills', Utils.formatNumber(stats.totalKills || 0));
         setRecord('rec-elites', Utils.formatNumber(stats.elitesDefeated || 0));
         setRecord('rec-bosses', Utils.formatNumber(stats.bossesDefeated || 0));
-        setRecord('rec-damage', Utils.formatNumber(stats.totalDamageDealt || 0));
-        setRecord('rec-xp', Utils.formatNumber(stats.totalXPEarned || 0));
-        setRecord('rec-pickups', Utils.formatNumber(stats.pickupsCollected || 0));
         
-        // Best runs
-        const formatDate = (dateStr) => {
-            if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return date.toLocaleDateString();
-        };
-        
-        // Longest survival
+        // Populate Personal Bests
         const survivalData = bestRuns.longestSurvival || {};
         setRecord('best-survival', survivalData.time ? Utils.formatTime(survivalData.time) : '--:--');
-        setRecord('best-survival-date', formatDate(survivalData.date));
         
-        // Highest level
         const levelData = bestRuns.highestLevel || {};
         setRecord('best-level', levelData.level || 0);
-        setRecord('best-level-date', formatDate(levelData.date));
         
-        // Most kills
         const killsData = bestRuns.mostKills || {};
         setRecord('best-kills', Utils.formatNumber(killsData.kills || 0));
-        setRecord('best-kills-date', formatDate(killsData.date));
         
-        // Highest damage
-        const damageData = bestRuns.highestDamage || {};
-        setRecord('best-damage', Utils.formatNumber(damageData.damage || 0));
-        setRecord('best-damage-date', formatDate(damageData.date));
+        // Populate Recent Runs
+        this.populateRecentRuns(recentRuns);
+    }
+    
+    populateRecentRuns(runs) {
+        const container = document.getElementById('recent-runs-list');
+        if (!container) return;
+        
+        if (!runs || runs.length === 0) {
+            container.innerHTML = '<div class="recent-runs-empty">No missions recorded yet</div>';
+            return;
+        }
+        
+        container.innerHTML = runs.map((run, index) => {
+            const date = new Date(run.created_at);
+            const dateStr = date.toLocaleDateString();
+            const timeStr = Utils.formatTime(run.time_survived || 0);
+            const escaped = (run.time_survived || 0) >= 1800; // 30 minutes = escape
+            const statusIcon = escaped ? '✅' : '💀';
+            const statusClass = escaped ? 'escaped' : 'failed';
+            
+            return `
+                <div class="recent-run-item ${statusClass}">
+                    <div class="recent-run-status">${statusIcon}</div>
+                    <div class="recent-run-info">
+                        <div class="recent-run-time">${timeStr}</div>
+                        <div class="recent-run-details">Lv.${run.level_reached || 0} • ${Utils.formatNumber(run.kills || 0)} kills</div>
+                    </div>
+                    <div class="recent-run-date">${dateStr}</div>
+                </div>
+            `;
+        }).join('');
     }
     
     // =====================================================

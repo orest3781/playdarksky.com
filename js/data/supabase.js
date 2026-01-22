@@ -163,6 +163,77 @@ class SupabaseService {
     }
 
     // =====================================================
+    // PLAYER STATS (Cloud-synced)
+    // =====================================================
+
+    // Sync local stats to cloud
+    async syncStats(localStats) {
+        if (!this.client || !this.user) return { error: 'Not logged in' };
+
+        // Get current cloud stats
+        const { data: existing } = await this.client
+            .from('player_stats')
+            .select('*')
+            .eq('player_id', this.user.id)
+            .single();
+
+        // Merge stats (take the higher values)
+        const mergedStats = {
+            player_id: this.user.id,
+            total_play_time: Math.max(localStats.totalPlayTime || 0, existing?.total_play_time || 0),
+            runs_completed: Math.max(localStats.runsCompleted || 0, existing?.runs_completed || 0),
+            runs_attempted: Math.max(localStats.runsAttempted || 0, existing?.runs_attempted || 0),
+            total_kills: Math.max(localStats.totalKills || 0, existing?.total_kills || 0),
+            total_deaths: Math.max(localStats.totalDeaths || 0, existing?.total_deaths || 0),
+            total_xp_earned: Math.max(localStats.totalXPEarned || 0, existing?.total_xp_earned || 0),
+            highest_level: Math.max(localStats.highestLevel || 0, existing?.highest_level || 0),
+            longest_survival: Math.max(localStats.longestSurvival || 0, existing?.longest_survival || 0),
+            total_damage_dealt: Math.max(localStats.totalDamageDealt || 0, existing?.total_damage_dealt || 0),
+            bosses_defeated: Math.max(localStats.bossesDefeated || 0, existing?.bosses_defeated || 0),
+            elites_defeated: Math.max(localStats.elitesDefeated || 0, existing?.elites_defeated || 0),
+            updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await this.client
+            .from('player_stats')
+            .upsert(mergedStats, { onConflict: 'player_id' })
+            .select();
+
+        if (error) {
+            console.error('Failed to sync stats:', error);
+        }
+
+        return { data, error };
+    }
+
+    // Get player's cloud stats
+    async getPlayerStats() {
+        if (!this.client || !this.user) return { data: null, error: 'Not logged in' };
+
+        const { data, error } = await this.client
+            .from('player_stats')
+            .select('*')
+            .eq('player_id', this.user.id)
+            .single();
+
+        return { data, error };
+    }
+
+    // Get player's recent runs (from leaderboard)
+    async getRecentRuns(limit = 5) {
+        if (!this.client || !this.user) return { data: [], error: 'Not logged in' };
+
+        const { data, error } = await this.client
+            .from('leaderboard')
+            .select('*')
+            .eq('player_id', this.user.id)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+
+        return { data: data || [], error };
+    }
+
+    // =====================================================
     // GLOBAL LEADERBOARD
     // =====================================================
 
