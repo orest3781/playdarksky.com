@@ -1679,6 +1679,9 @@ class Player {
             );
         }
         
+        // Draw weapon indicators around player
+        this.drawWeaponIndicators(ctx, screenX, screenY);
+        
         ctx.globalAlpha = 1;
     }
     
@@ -2044,6 +2047,69 @@ class Player {
                 ctx.globalAlpha = 1;
             }
         }
+    }
+    
+    // Draw small weapon icons orbiting the player
+    drawWeaponIndicators(ctx, screenX, screenY) {
+        if (this.weapons.length === 0) return;
+        
+        const orbitRadius = 50; // Distance from player
+        const iconSize = 14;
+        const numWeapons = this.weapons.length;
+        
+        ctx.save();
+        
+        for (let i = 0; i < numWeapons; i++) {
+            const weapon = this.weapons[i];
+            const angle = (i / numWeapons) * Math.PI * 2 - Math.PI / 2; // Start at top
+            const x = screenX + Math.cos(angle) * orbitRadius;
+            const y = screenY + Math.sin(angle) * orbitRadius;
+            
+            // Check if weapon is expiring (duration system)
+            const hasDuration = GAME_CONFIG.WEAPON_DURATION_ENABLED && 
+                               !weapon.isStartingWeapon && 
+                               weapon.remainingDuration !== Infinity;
+            const isLow = hasDuration && weapon.remainingDuration <= (GAME_CONFIG.WEAPON_WARNING_THRESHOLD || 10);
+            
+            // Background circle
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = isLow ? 'rgba(255, 80, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.arc(x, y, iconSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Border
+            ctx.strokeStyle = isLow ? '#ff6600' : weapon.data.color || '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Duration arc (like a pie timer)
+            if (hasDuration) {
+                const pct = weapon.remainingDuration / weapon.maxDuration;
+                ctx.strokeStyle = isLow ? '#ff3300' : '#00ff88';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(x, y, iconSize + 2, -Math.PI / 2, -Math.PI / 2 + pct * Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Weapon icon
+            ctx.globalAlpha = 1;
+            ctx.font = `${iconSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(weapon.data.icon, x, y);
+            
+            // Level badge (small)
+            if (weapon.level > 1) {
+                ctx.font = 'bold 8px Arial';
+                ctx.fillStyle = '#ffff00';
+                ctx.fillText(weapon.level, x + iconSize * 0.6, y + iconSize * 0.6);
+            }
+        }
+        
+        ctx.restore();
     }
 }
 

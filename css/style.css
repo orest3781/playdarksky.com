@@ -3866,8 +3866,7 @@ body:has(#settings-screen.active) #scanlines-overlay {
 }
 
 .weapon-slots {
-    display: flex;
-    gap: 8px;
+    display: none; /* Weapons shown around player instead */
 }
 
 .weapon-slot {
