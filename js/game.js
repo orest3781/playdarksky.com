@@ -2534,21 +2534,35 @@ class Game {
         const textOffsetX = Math.cos(angle) * -35;
         const textOffsetY = Math.sin(angle) * -35;
         
-        // Icon
-        ctx.font = '14px Arial';
+        // Icon (larger)
+        ctx.font = '18px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = pickup.color;
         ctx.globalAlpha = 0.9;
-        ctx.fillText(pickup.icon, edgeX + textOffsetX, edgeY + textOffsetY - 8);
+        ctx.fillText(pickup.icon, edgeX + textOffsetX, edgeY + textOffsetY - 10);
         
         // Distance
-        ctx.font = 'bold 10px monospace';
+        ctx.font = 'bold 11px monospace';
         ctx.fillStyle = '#ffffff';
-        ctx.globalAlpha = 0.7;
-        ctx.fillText(distText + 'm', edgeX + textOffsetX, edgeY + textOffsetY + 8);
+        ctx.globalAlpha = 0.8;
+        ctx.fillText(distText + 'm', edgeX + textOffsetX, edgeY + textOffsetY + 10);
         
         ctx.restore();
+        
+        // Screen edge glow for nearby powerups (within 500 units)
+        if (distToPickup < 500 && pickup.type.startsWith('powerup')) {
+            const glowIntensity = (1 - distToPickup / 500) * 0.4;
+            const glowSize = 80;
+            
+            ctx.save();
+            const edgeGrad = ctx.createRadialGradient(edgeX, edgeY, 0, edgeX, edgeY, glowSize);
+            edgeGrad.addColorStop(0, pickup.color + Math.floor(glowIntensity * 255).toString(16).padStart(2, '0'));
+            edgeGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = edgeGrad;
+            ctx.fillRect(edgeX - glowSize, edgeY - glowSize, glowSize * 2, glowSize * 2);
+            ctx.restore();
+        }
     }
     
     drawBackground(ctx) {

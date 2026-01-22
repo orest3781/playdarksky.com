@@ -457,45 +457,74 @@ class Pickup {
     
     drawPowerupPickup(ctx, x, y, data, icon) {
         const pulse = Math.sin(this.bobPhase * 2) * 0.2 + 1;
-        const r = this.radius * 1.5 * pulse;
+        const r = this.radius * 2.0 * pulse;  // Increased size (was 1.5)
         
-        // Outer glow ring
+        // === BEACON EFFECT - vertical light pillar ===
+        const beaconHeight = 80;
+        const beaconAlpha = 0.3 + Math.sin(this.bobPhase * 4) * 0.2;
+        const beaconGrad = ctx.createLinearGradient(x, y - beaconHeight, x, y + 20);
+        beaconGrad.addColorStop(0, 'transparent');
+        beaconGrad.addColorStop(0.3, data.glowColor + '40');
+        beaconGrad.addColorStop(0.5, data.glowColor + '80');
+        beaconGrad.addColorStop(1, 'transparent');
+        ctx.globalAlpha = beaconAlpha;
+        ctx.fillStyle = beaconGrad;
+        ctx.fillRect(x - 8, y - beaconHeight, 16, beaconHeight + 20);
+        
+        // === EXPANDING RING PULSE ===
+        const ringPhase = (this.bobPhase * 2) % (Math.PI * 2);
+        const ringRadius = r * 1.5 + (ringPhase / Math.PI) * 30;
+        const ringAlpha = Math.max(0, 0.6 - (ringPhase / (Math.PI * 2)) * 0.6);
         ctx.strokeStyle = data.glowColor;
-        ctx.lineWidth = 3;
-        ctx.globalAlpha = 0.5 + Math.sin(this.bobPhase * 3) * 0.3;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = ringAlpha;
+        ctx.beginPath();
+        ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Outer glow ring (brighter)
+        ctx.strokeStyle = data.glowColor;
+        ctx.lineWidth = 4;  // Thicker
+        ctx.globalAlpha = 0.7 + Math.sin(this.bobPhase * 3) * 0.3;
         ctx.beginPath();
         ctx.arc(x, y, r * 1.4, 0, Math.PI * 2);
         ctx.stroke();
         
-        // Inner glow
-        const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 1.3);
+        // Inner glow (larger, brighter)
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 1.6);
         glow.addColorStop(0, data.glowColor);
-        glow.addColorStop(0.5, data.color + '88');
+        glow.addColorStop(0.4, data.color + 'cc');
         glow.addColorStop(1, 'transparent');
-        ctx.globalAlpha = 0.8;
+        ctx.globalAlpha = 0.9;
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(x, y, r * 1.3, 0, Math.PI * 2);
+        ctx.arc(x, y, r * 1.6, 0, Math.PI * 2);
         ctx.fill();
         
-        // Core
+        // Core (brighter)
         ctx.globalAlpha = 1;
         ctx.fillStyle = data.color;
+        ctx.shadowColor = data.glowColor;
+        ctx.shadowBlur = 20;
         ctx.beginPath();
-        ctx.arc(x, y, r * 0.7, 0, Math.PI * 2);
+        ctx.arc(x, y, r * 0.8, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
         
-        // Icon
+        // Icon (larger)
         ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${r}px Arial`;
+        ctx.font = `bold ${r * 1.2}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(icon, x, y);
         
-        // Key hint
-        ctx.fillStyle = data.glowColor;
-        ctx.font = `bold ${r * 0.5}px 'Share Tech Mono', monospace`;
-        ctx.fillText(data.key, x, y + r * 1.2);
+        // Key hint (more visible)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${r * 0.6}px 'Share Tech Mono', monospace`;
+        ctx.shadowColor = data.glowColor;
+        ctx.shadowBlur = 10;
+        ctx.fillText(data.key, x, y + r * 1.4);
+        ctx.shadowBlur = 0;
     }
     
     drawUltimateFragment(ctx, x, y, t, pulse) {
