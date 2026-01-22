@@ -15,13 +15,12 @@ const GAME_CONFIG = {
     WORLD_WIDTH: 4000,      // Large play area
     WORLD_HEIGHT: 4000,
     
-    // Timing - Run duration options (in seconds)
-    RUN_DURATIONS: {
-        short: 10 * 60,     // 10 minutes
-        normal: 30 * 60,    // 30 minutes (default)
-        extended: 45 * 60   // 45 minutes
-    },
-    RUN_DURATION: 30 * 60,  // 30 minutes in seconds (default, can be overridden)
+    // Endless Mode - no time limit, survive as long as possible
+    ENDLESS_MODE: true,
+    
+    // Phase timing (phases loop after Phase 5 with increasing difficulty)
+    PHASE_LOOP_START: 30 * 60,   // 30 minutes - when phases start looping
+    PHASE_LOOP_DURATION: 10 * 60, // Each loop cycle is 10 minutes
     
     // XP and leveling - Balanced for 30-minute run
     // Target: Level 15-20 by Phase 3, Level 30-40 by end
@@ -638,14 +637,14 @@ const PHASES = [
             'Orbital strike warnings'
         ]
     },
-    // Phase 5: CONTAINMENT (24:00 - 30:00)
-    // Total military response. They will not let you leave.
+    // Phase 5: CONTAINMENT (24:00+)
+    // Total military response - continues indefinitely with scaling difficulty
     {
         name: 'CONTAINMENT',
         subtitle: 'No Escape',
         description: 'Full containment protocol. All remaining forces committed to your destruction.',
         startTime: 24 * 60,
-        endTime: 30 * 60,
+        endTime: Infinity,  // Endless mode - no end
         color: '#ff4444',
         bgTint: 'rgba(120, 30, 30, 0.2)',
         enemyHealthMod: 1.85,
@@ -661,6 +660,14 @@ const PHASES = [
         ]
     }
 ];
+
+// Endless mode scaling - multipliers applied per 10-minute cycle after Phase 5
+const ENDLESS_SCALING = {
+    healthPerCycle: 0.25,    // +25% enemy HP per cycle
+    damagePerCycle: 0.15,    // +15% enemy damage per cycle
+    speedPerCycle: 0.05,     // +5% enemy speed per cycle
+    spawnRatePerCycle: 0.10  // +10% spawn rate per cycle
+};
 
 // UAP_TYPES is defined in js/data/uapTypes.js
 

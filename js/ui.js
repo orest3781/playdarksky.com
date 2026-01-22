@@ -1334,10 +1334,17 @@ class UI {
         // Find next phase
         const nextPhaseIndex = currentPhase + 1;
         
-        // No next phase (final phase)
+        // Endless mode: No next phase after Phase 5 - show threat level instead
         if (nextPhaseIndex >= PHASES.length) {
             if (nextPhaseEl) {
-                nextPhaseEl.textContent = '◆ FINAL PHASE ◆';
+                // Show endless mode info - threat level based on time
+                const cycleTime = gameTime - (24 * 60); // Time since Phase 5 started
+                const threatLevel = cycleTime > 0 ? Math.floor(cycleTime / 600) + 1 : 0;
+                if (threatLevel > 0) {
+                    nextPhaseEl.textContent = `◆ ENDLESS MODE • THREAT LV.${threatLevel} ◆`;
+                } else {
+                    nextPhaseEl.textContent = '◆ CONTAINMENT ACTIVE ◆';
+                }
                 nextPhaseEl.className = 'flir-data flir-next-phase final';
             }
             if (warningEl) warningEl.classList.add('hidden');
@@ -2688,13 +2695,10 @@ class UI {
             const date = new Date(run.created_at);
             const dateStr = date.toLocaleDateString();
             const timeStr = Utils.formatTime(run.time_survived || 0);
-            const escaped = (run.time_survived || 0) >= 1800; // 30 minutes = escape
-            const statusIcon = escaped ? '✅' : '💀';
-            const statusClass = escaped ? 'escaped' : 'failed';
             
             return `
-                <div class="recent-run-item ${statusClass}">
-                    <div class="recent-run-status">${statusIcon}</div>
+                <div class="recent-run-item">
+                    <div class="recent-run-rank">#${index + 1}</div>
                     <div class="recent-run-info">
                         <div class="recent-run-time">${timeStr}</div>
                         <div class="recent-run-details">Lv.${run.level_reached || 0} • ${Utils.formatNumber(run.kills || 0)} kills</div>
@@ -3466,18 +3470,14 @@ class UI {
     showGameOver(victory, stats) {
         this.showScreen('gameover');
         
-        this.elements.goTitle.textContent = victory ? 'ESCAPED' : 'CAPTURED';
-        this.elements.goTitle.classList.toggle('victory', victory);
+        // Endless mode - no victory, just how long you survived
+        this.elements.goTitle.textContent = 'CAPTURED';
+        this.elements.goTitle.classList.remove('victory');
         
-        // Show reason for failure or victory message
+        // Show failure reason
         if (this.elements.goReason) {
-            if (victory) {
-                this.elements.goReason.textContent = 'You evaded containment for 30 minutes and escaped!';
-                this.elements.goReason.classList.add('victory');
-            } else {
-                this.elements.goReason.textContent = stats.failReason || 'Your craft was shot down';
-                this.elements.goReason.classList.remove('victory');
-            }
+            this.elements.goReason.textContent = stats.failReason || 'Your craft was shot down';
+            this.elements.goReason.classList.remove('victory');
         }
         
         this.elements.goTime.textContent = Utils.formatTime(stats.time);

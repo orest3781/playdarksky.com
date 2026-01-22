@@ -59,13 +59,37 @@ const ACHIEVEMENTS = {
     full_run: {
         id: 'full_run',
         name: 'The Long Night',
-        description: 'Evade for 30 minutes and escape',
+        description: 'Survive for 30 minutes',
         icon: '🌟',
         category: 'progression',
         tier: 'legendary',
         requirement: { type: 'survival_time', value: 1800 },
         reward: { type: 'unlock_uap', value: 'triangle' },
         hidden: false
+    },
+    
+    endless_survivor: {
+        id: 'endless_survivor',
+        name: 'Endless Survivor',
+        description: 'Survive for 45 minutes in endless mode',
+        icon: '♾️',
+        category: 'progression',
+        tier: 'legendary',
+        requirement: { type: 'survival_time', value: 2700 },
+        reward: { type: 'currency', value: 1000 },
+        hidden: false
+    },
+    
+    hour_long: {
+        id: 'hour_long',
+        name: 'The Hour of Power',
+        description: 'Survive for 1 full hour',
+        icon: '⏰',
+        category: 'progression',
+        tier: 'legendary',
+        requirement: { type: 'survival_time', value: 3600 },
+        reward: { type: 'currency', value: 2500 },
+        hidden: true
     },
     
     level_10: {

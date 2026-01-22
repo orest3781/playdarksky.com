@@ -876,12 +876,7 @@ class Game {
             this.dpsTimer = 0;
         }
         
-        // Check win condition (use selected run duration)
-        const targetDuration = this.runDuration || GAME_CONFIG.RUN_DURATION;
-        if (this.gameTime >= targetDuration) {
-            this.gameOver(true);
-            return;
-        }
+        // Endless mode - no win condition, survive as long as possible
         
         // Update player
         this.player.update(dt, this.input);
@@ -3808,20 +3803,19 @@ class Game {
         this.saveData.leaderboard = this.saveData.leaderboard.slice(0, 5);
     }
     
-    // Game over
-    gameOver(victory, failReason = null) {
+    // Game over - endless mode, no victory condition
+    gameOver(victory = false, failReason = null) {
         this.running = false;
         
-        // Stop music and play appropriate sound
+        // Stop music and play death sound (no victory in endless mode)
         this.sound?.stopMusic();
-        this.playSound(victory ? 'victory' : 'death');
+        this.playSound('death');
         
         // Calculate rewards - include in-run currency
         const baseCurrency = Math.floor(this.kills * 0.5);
         const timeBonus = Math.floor(this.gameTime / 10);
-        const victoryBonus = victory ? 500 : 0;
         const inRunCurrency = this.currency || 0;
-        const totalCurrency = baseCurrency + timeBonus + victoryBonus + inRunCurrency;
+        const totalCurrency = baseCurrency + timeBonus + inRunCurrency;
         
         // Update save data
         this.saveData.currency += totalCurrency;

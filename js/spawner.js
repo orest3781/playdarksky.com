@@ -159,20 +159,22 @@ class Spawner {
             { time: 1320, type: 'elite', enemy: 'railgunTank', count: 3, message: 'RAILGUNS AIMING AT YOU' },
             { time: 1380, type: 'ring', enemy: 'blackHawk', count: 10 },
             
-            // ----- PHASE 5: FINAL STAND (24:00 - 30:00) -----
+            // ----- PHASE 5: FINAL STAND (24:00+) - ENDLESS -----
             { time: 1440, type: 'boss', enemy: 'acePilot', count: 3, message: 'ELITE ACES WANT YOUR HEAD' },
             { time: 1500, type: 'hazard', enemy: 'orbitalStrike', count: 5, message: 'RAINING FIRE ON YOU!' },
             { time: 1560, type: 'swarm', enemy: 'eliteSquadron', count: 25, message: 'TOP GUNS SCRAMBLED FOR YOU' },
             { time: 1620, type: 'boss', enemy: 'nuclearSub', count: 2, message: 'NUCLEAR SUBS SURFACING' },
             { time: 1680, type: 'swarm', enemy: 'droneSwarm', count: 12 },
             { time: 1740, type: 'boss', enemy: 'fordCarrier', count: 1, message: 'SUPERCARRIER DEPLOYING EVERYTHING' },
-            { time: 1770, type: 'ring', enemy: 'acePilot', count: 4, message: 'THEY WON\'T LET YOU ESCAPE' },
-            { time: 1800, type: 'victory', message: 'YOU ESCAPED!' }
+            { time: 1770, type: 'ring', enemy: 'acePilot', count: 4, message: 'NOWHERE LEFT TO RUN' }
+            // No victory - endless mode continues until death
         ];
         
         this.triggeredSpecials = new Set();
         this.initialBurstSpawned = false;
         this.lastPhase = -1;
+        this.endlessCycle = 0;  // Track endless mode cycles
+        this.lastCycleTime = 0;
     }
     
     getCurrentPhase() {
@@ -185,15 +187,33 @@ class Spawner {
         return 0;
     }
     
-    // Get phase difficulty modifiers
+    // Get endless mode cycle number (each cycle = 10 minutes after 30 min mark)
+    getEndlessCycle() {
+        const time = this.game.gameTime;
+        if (time < GAME_CONFIG.PHASE_LOOP_START) return 0;
+        return Math.floor((time - GAME_CONFIG.PHASE_LOOP_START) / (GAME_CONFIG.PHASE_LOOP_DURATION || 600)) + 1;
+    }
+    
+    // Get phase difficulty modifiers (with endless scaling)
     getPhaseModifiers() {
         const phase = PHASES[this.getCurrentPhase()];
-        return {
-            health: phase.enemyHealthMod || 1.0,
-            damage: phase.enemyDamageMod || 1.0,
-            speed: phase.enemySpeedMod || 1.0,
-            xp: phase.xpMod || 1.0
-        };
+        const cycle = this.getEndlessCycle();
+        
+        // Base modifiers from phase
+        let health = phase.enemyHealthMod || 1.0;
+        let damage = phase.enemyDamageMod || 1.0;
+        let speed = phase.enemySpeedMod || 1.0;
+        let xp = phase.xpMod || 1.0;
+        
+        // Apply endless scaling
+        if (cycle > 0 && typeof ENDLESS_SCALING !== 'undefined') {
+            health *= 1 + (ENDLESS_SCALING.healthPerCycle * cycle);
+            damage *= 1 + (ENDLESS_SCALING.damagePerCycle * cycle);
+            speed *= 1 + (ENDLESS_SCALING.speedPerCycle * cycle);
+            xp *= 1 + (cycle * 0.5);  // XP also increases
+        }
+        
+        return { health, damage, speed, xp };
     }
     
     // Announce phase transitions
@@ -356,16 +376,56 @@ class Spawner {
                 this.triggerSpecialWave(special);
             }
         }
+        
+        // Endless mode: spawn extra boss waves every 2 minutes after 30 min mark
+        const cycle = this.getEndlessCycle();
+        if (cycle > 0) {
+            const cycleTime = Math.floor(time / 120); // Every 2 minutes
+            if (cycleTime > this.lastCycleTime) {
+                this.lastCycleTime = cycleTime;
+                this.triggerEndlessBossWave(cycle);
+            }
+        }
+    }
+    
+    triggerEndlessBossWave(cycle) {
+        const player = this.game.player;
+        const bossTypes = ['acePilot', 'nuclearSub', 'fordCarrier', 'nimitzCarrier'];
+        const eliteTypes = ['experimentalCraft', 'aegisCruiser', 'railgunTank'];
+        
+        // Show cycle milestone messages
+        if (cycle % 3 === 0) {
+            this.game.showWarning(`THREAT LEVEL ${cycle}`, 'boss');
+        }
+        
+        // Boss wave - more bosses as cycles increase
+        const bossCount = Math.min(1 + Math.floor(cycle / 2), 4);
+        for (let i = 0; i < bossCount; i++) {
+            const bossType = bossTypes[Math.floor(Math.random() * bossTypes.length)];
+            const angle = (i / bossCount) * Math.PI * 2 + Math.random() * 0.3;
+            const dist = 600 + Math.random() * 100;
+            this.game.spawnEnemy(
+                bossType,
+                player.x + Math.cos(angle) * dist,
+                player.y + Math.sin(angle) * dist
+            );
+        }
+        
+        // Elite swarm
+        const eliteCount = 3 + cycle;
+        for (let i = 0; i < eliteCount; i++) {
+            const eliteType = eliteTypes[Math.floor(Math.random() * eliteTypes.length)];
+            const pos = this.getSpawnPosition();
+            this.game.spawnEnemy(eliteType, pos.x, pos.y);
+        }
+        
+        if (this.game.screenShakeAmount !== undefined) {
+            this.game.screenShakeAmount = 10 + cycle;
+        }
     }
     
     triggerSpecialWave(special) {
         const player = this.game.player;
-        
-        // Handle victory condition
-        if (special.type === 'victory') {
-            this.game.showWarning(special.message, 'victory');
-            return;
-        }
         
         // Show warning message
         const warningType = special.type === 'boss' ? 'boss' : 
