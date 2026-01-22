@@ -8,7 +8,9 @@ class DamageNumberSystem {
     constructor(game) {
         this.game = game;
         this.numbers = [];
-        this.maxNumbers = 100;
+        this.maxNumbers = 50;  // Reduced from 100 to prevent clutter
+        this.consolidationRadius = 50;  // Combine nearby damage
+        this.consolidationTime = 0.15;  // Time window to combine
     }
     
     spawn(x, y, damage, options = {}) {
@@ -16,13 +18,28 @@ class DamageNumberSystem {
         const displayDamage = Math.floor(damage);
         if (displayDamage <= 0) return;
         
-        if (this.numbers.length >= this.maxNumbers) {
-            this.numbers.shift(); // Remove oldest
-        }
-        
         const isCrit = options.crit || false;
         const isHeal = options.heal || false;
         const customColor = options.color || null;
+        
+        // Try to consolidate with nearby recent damage number
+        if (!isCrit && !isHeal) {
+            for (const num of this.numbers) {
+                if (num.life > num.maxLife - this.consolidationTime && 
+                    !num.crit && !num.heal &&
+                    Math.abs(num.x - x) < this.consolidationRadius &&
+                    Math.abs(num.y - y) < this.consolidationRadius) {
+                    // Add to existing number instead of spawning new one
+                    num.damage += displayDamage;
+                    num.scale = Math.min(num.scale * 1.1, 2.5);  // Grow slightly
+                    return;
+                }
+            }
+        }
+        
+        if (this.numbers.length >= this.maxNumbers) {
+            this.numbers.shift(); // Remove oldest
+        }
         
         this.numbers.push({
             x: x + Utils.random(-10, 10),
@@ -30,9 +47,9 @@ class DamageNumberSystem {
             damage: displayDamage,
             vx: Utils.random(-40, 40),
             vy: -150 - Utils.random(0, 80),
-            life: 1.2,
-            maxLife: 1.2,
-            scale: isCrit ? 2.2 : 1.4,
+            life: 1.0,  // Slightly shorter duration
+            maxLife: 1.0,
+            scale: isCrit ? 2.0 : 1.2,  // Slightly smaller base scale
             crit: isCrit,
             heal: isHeal,
             color: customColor || (isHeal ? '#00ff88' : (isCrit ? '#ff4444' : '#ffd700'))
@@ -64,8 +81,8 @@ class DamageNumberSystem {
             ctx.save();
             ctx.globalAlpha = alpha;
             
-            // Bigger base font size
-            const fontSize = Math.floor(20 * scale);
+            // Cap font size to prevent huge numbers
+            const fontSize = Math.min(Math.floor(18 * scale), 40);
             ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
             ctx.textAlign = 'center';
             

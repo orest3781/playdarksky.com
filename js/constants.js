@@ -662,11 +662,13 @@ const PHASES = [
 ];
 
 // Endless mode scaling - multipliers applied per 10-minute cycle after Phase 5
+// Reduced values for smoother difficulty curve
 const ENDLESS_SCALING = {
-    healthPerCycle: 0.25,    // +25% enemy HP per cycle
-    damagePerCycle: 0.15,    // +15% enemy damage per cycle
-    speedPerCycle: 0.05,     // +5% enemy speed per cycle
-    spawnRatePerCycle: 0.10  // +10% spawn rate per cycle
+    healthPerCycle: 0.15,    // +15% enemy HP per cycle (was 25%)
+    damagePerCycle: 0.10,    // +10% enemy damage per cycle (was 15%)
+    speedPerCycle: 0.03,     // +3% enemy speed per cycle (was 5%) - capped at 50% bonus
+    speedCap: 1.5,           // Max speed multiplier
+    spawnRatePerCycle: 0.05  // +5% spawn rate per cycle (was 10%)
 };
 
 // UAP_TYPES is defined in js/data/uapTypes.js

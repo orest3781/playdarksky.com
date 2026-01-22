@@ -205,12 +205,21 @@ class Spawner {
         let speed = phase.enemySpeedMod || 1.0;
         let xp = phase.xpMod || 1.0;
         
-        // Apply endless scaling
+        // Apply endless scaling with diminishing returns
         if (cycle > 0 && typeof ENDLESS_SCALING !== 'undefined') {
-            health *= 1 + (ENDLESS_SCALING.healthPerCycle * cycle);
-            damage *= 1 + (ENDLESS_SCALING.damagePerCycle * cycle);
-            speed *= 1 + (ENDLESS_SCALING.speedPerCycle * cycle);
-            xp *= 1 + (cycle * 0.5);  // XP also increases
+            // Use sqrt for diminishing returns on later cycles
+            const effectiveCycle = Math.sqrt(cycle) * Math.sqrt(cycle > 1 ? cycle : 1);
+            health *= 1 + (ENDLESS_SCALING.healthPerCycle * effectiveCycle);
+            damage *= 1 + (ENDLESS_SCALING.damagePerCycle * effectiveCycle);
+            
+            // Speed has a hard cap
+            const speedBonus = Math.min(
+                ENDLESS_SCALING.speedPerCycle * cycle,
+                (ENDLESS_SCALING.speedCap || 1.5) - 1
+            );
+            speed *= 1 + speedBonus;
+            
+            xp *= 1 + (cycle * 0.3);  // Reduced XP scaling
         }
         
         return { health, damage, speed, xp };
@@ -273,15 +282,24 @@ class Spawner {
         // Check for special waves
         this.checkSpecialWaves();
         
-        // Regular spawning
+        // Regular spawning with endless mode rate adjustment
         this.spawnTimer += dt;
         
-        if (this.spawnTimer >= config.spawnRate) {
+        // Apply spawn rate scaling but cap at minimum 0.15s between waves
+        const cycle = this.getEndlessCycle();
+        let effectiveSpawnRate = config.spawnRate;
+        if (cycle > 0 && typeof ENDLESS_SCALING !== 'undefined') {
+            const rateBonus = ENDLESS_SCALING.spawnRatePerCycle * cycle;
+            effectiveSpawnRate = Math.max(0.15, config.spawnRate / (1 + rateBonus));
+        }
+        
+        if (this.spawnTimer >= effectiveSpawnRate) {
             this.spawnTimer = 0;
             
-            // Check if below max enemies
+            // Check if below max enemies - cap at 150 to maintain playability
             const currentEnemies = this.game.enemyPool.getActive().length;
-            if (currentEnemies < config.maxEnemies) {
+            const maxEnemies = Math.min(config.maxEnemies, 150);
+            if (currentEnemies < maxEnemies) {
                 this.spawnWave(config);
             }
         }
@@ -297,11 +315,11 @@ class Spawner {
         const radarMultiplier = this.game.radarSiteManager ? 
             this.game.radarSiteManager.getSpawnMultiplier() : 1.0;
         
-        // Calculate spawn count with time-based growth
+        // Calculate spawn count with time-based growth (capped for playability)
         const minutesPlayed = this.game.gameTime / 60;
-        const growthBonus = (config.countGrowth || 0.5) * minutesPlayed;
+        const growthBonus = Math.min((config.countGrowth || 0.5) * minutesPlayed, 8);  // Cap growth bonus
         const baseCount = config.baseCount + Math.floor(growthBonus);
-        const count = Math.ceil(baseCount * radarMultiplier);
+        const count = Math.min(Math.ceil(baseCount * radarMultiplier), 12);  // Cap at 12 per wave
         
         // Spawn regular enemies
         for (let i = 0; i < count; i++) {
