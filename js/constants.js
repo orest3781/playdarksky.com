@@ -300,9 +300,9 @@ window.UFO.resetKeybindings = resetKeybindings;
 // Military installations that increase enemy spawns
 // =====================================================
 const RADAR_SITE_CONFIG = {
-    // Ship count and placement
-    SITE_COUNT: 4,                    // Number of enemy destroyers per run
-    MIN_SITE_DISTANCE: 800,           // Minimum distance between ships
+    // Ship count per phase (spawns additional ships as phases progress)
+    SHIPS_PER_PHASE: [4, 2, 3, 3, 4], // Phase 1: 4, Phase 2: +2, Phase 3: +3, Phase 4: +3, Phase 5: +4
+    MIN_SITE_DISTANCE: 600,           // Minimum distance between ships (reduced for more ships)
     
     // Ship health (scaled 8x)
     SHIP_HEALTH: 2400,                // Total ship HP - scaled 8x

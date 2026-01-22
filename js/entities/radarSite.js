@@ -581,13 +581,24 @@ class RadarSiteManager {
         this.game = game;
         this.sites = [];
         this.initialized = false;
+        this.lastPhase = -1;  // Track phase for additional spawns
+        this.totalSpawned = 0;
     }
     
     init() {
         if (this.initialized) return;
         this.initialized = true;
+        this.lastPhase = 0;
         
-        const shipCount = RADAR_SITE_CONFIG.SITE_COUNT;
+        // Spawn initial ships for phase 1
+        this.spawnShipsForPhase(0);
+    }
+    
+    // Spawn additional ships when entering a new phase
+    spawnShipsForPhase(phase) {
+        const shipsPerPhase = RADAR_SITE_CONFIG.SHIPS_PER_PHASE || [4, 2, 3, 3, 4];
+        const shipCount = shipsPerPhase[Math.min(phase, shipsPerPhase.length - 1)];
+        
         const worldWidth = GAME_CONFIG.WORLD_WIDTH;
         const worldHeight = GAME_CONFIG.WORLD_HEIGHT;
         const margin = 500;
@@ -596,18 +607,25 @@ class RadarSiteManager {
         const positions = [];
         let attempts = 0;
         
-        while (positions.length < shipCount && attempts < 100) {
+        while (positions.length < shipCount && attempts < 150) {
             attempts++;
             
             const x = Utils.random(margin, worldWidth - margin);
             const y = Utils.random(margin, worldHeight - margin);
             
-            // Not too close to player spawn
-            const distFromCenter = Utils.distance(x, y, worldWidth / 2, worldHeight / 2);
-            if (distFromCenter < 800) continue;
+            // Not too close to player
+            const distFromPlayer = Utils.distance(x, y, this.game.player.x, this.game.player.y);
+            if (distFromPlayer < 600) continue;
             
-            // Not too close to other ships
+            // Not too close to existing ships
             let valid = true;
+            for (const site of this.sites) {
+                if (Utils.distance(x, y, site.x, site.y) < minDistance) {
+                    valid = false;
+                    break;
+                }
+            }
+            // Not too close to new positions being placed
             for (const pos of positions) {
                 if (Utils.distance(x, y, pos.x, pos.y) < minDistance) {
                     valid = false;
@@ -619,13 +637,28 @@ class RadarSiteManager {
         }
         
         for (let i = 0; i < positions.length; i++) {
-            this.sites.push(new RadarShip(this.game, positions[i].x, positions[i].y, i));
+            this.sites.push(new RadarShip(this.game, positions[i].x, positions[i].y, this.totalSpawned + i));
         }
         
-        console.log(`Spawned ${this.sites.length} enemy destroyers`);
+        this.totalSpawned += positions.length;
+        
+        if (phase === 0) {
+            console.log(`Spawned ${positions.length} enemy destroyers`);
+        } else {
+            console.log(`Phase ${phase + 1}: Deployed ${positions.length} additional destroyers (${this.getActiveSiteCount()} active)`);
+        }
     }
     
     update(dt) {
+        // Check for phase transition and spawn additional ships
+        if (this.game.spawner) {
+            const currentPhase = this.game.spawner.getCurrentPhase();
+            if (currentPhase > this.lastPhase) {
+                this.spawnShipsForPhase(currentPhase);
+                this.lastPhase = currentPhase;
+            }
+        }
+        
         for (const site of this.sites) {
             site.update(dt, this.game.player);
         }
@@ -706,5 +739,7 @@ class RadarSiteManager {
     clear() {
         this.sites = [];
         this.initialized = false;
+        this.lastPhase = -1;
+        this.totalSpawned = 0;
     }
 }
