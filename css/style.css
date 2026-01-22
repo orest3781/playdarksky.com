@@ -429,6 +429,12 @@ body:has(#settings-screen.active) #scanlines-overlay {
     white-space: nowrap;
 }
 
+.lb-date {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0;
+}
+
 .leaderboard-row.header-row {
     background: rgba(0, 255, 204, 0.1);
     font-size: 0.65rem;

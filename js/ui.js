@@ -2729,7 +2729,8 @@ class UI {
                     level: entry.level_reached,
                     kills: entry.kills,
                     difficulty: entry.difficulty,
-                    playerName: entry.player_name
+                    playerName: entry.player_name,
+                    date: entry.created_at
                 }));
                 isGlobal = true;
             }
@@ -2756,8 +2757,8 @@ class UI {
                     <span class="lb-rank">#</span>
                     <span class="lb-stat lb-name">PILOT</span>
                     <span class="lb-stat">TIME</span>
-                    <span class="lb-stat">LVL</span>
                     <span class="lb-stat">KILLS</span>
+                    <span class="lb-stat lb-date">DATE</span>
                 `;
             } else {
                 headerRow.innerHTML = `
@@ -2788,14 +2789,26 @@ class UI {
             const timeStr = `${minutes}:${String(seconds).padStart(2, '0')}`;
             
             if (isGlobal) {
-                // Global leaderboard shows player name
+                // Global leaderboard shows player name and date
                 const playerName = (entry.playerName || 'Anonymous').substring(0, 12);
+                
+                // Format date as MM/DD HH:MM
+                let dateStr = '--';
+                if (entry.date) {
+                    const d = new Date(entry.date);
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const hours = String(d.getHours()).padStart(2, '0');
+                    const mins = String(d.getMinutes()).padStart(2, '0');
+                    dateStr = `${month}/${day} ${hours}:${mins}`;
+                }
+                
                 row.innerHTML = `
                     <span class="lb-rank">${index + 1}</span>
                     <span class="lb-stat lb-name">${playerName}</span>
                     <span class="lb-stat">${timeStr}</span>
-                    <span class="lb-stat">${entry.level || 1}</span>
                     <span class="lb-stat">${Utils.formatNumber(entry.kills || 0)}</span>
+                    <span class="lb-stat lb-date">${dateStr}</span>
                 `;
             } else {
                 // Local leaderboard shows difficulty
