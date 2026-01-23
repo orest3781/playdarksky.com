@@ -134,40 +134,67 @@ class WeaponEffects {
 
 // Weapon evolution combinations
 const WEAPON_EVOLUTIONS = {
-    // EMP + Gravity = Reality Tear
-    'empPulse+gravityWell': {
-        name: 'Reality Tear',
-        icon: '🌀',
-        description: 'Creates rifts in spacetime that massively damage and distort enemies',
-        color: '#ff00ff'
+    // Plasma Burst + Ion Trail = Solar Flare
+    // Your trail becomes plasma explosions, stopping causes backblast
+    'plasmaBurst+ionTrail': {
+        name: 'Solar Flare',
+        icon: '🌞',
+        description: 'Your ion trail becomes a chain of plasma explosions. Stopping triggers a massive backblast!',
+        color: '#ff8800'
     },
-    // Gravity Wave + Tractor Beam = Singularity Lance
-    'gravityWave+tractorBeam': {
-        name: 'Singularity Lance',
-        icon: '⚡',
-        description: 'Focused gravity beams that pierce through enemies and pull them in',
-        color: '#aa44ff'
+    
+    // Abduction Ray + Probe Swarm = Mass Abduction  
+    // Probes mark all enemies they touch, marks chain to nearby
+    'abductionRay+probeSwarm': {
+        name: 'Mass Abduction',
+        icon: '🛸',
+        description: 'Probes mark every enemy they pass. Marks spread to nearby enemies!',
+        color: '#00ff88'
     },
-    // Phase + Time = Quantum Echo
-    'phaseShift+timeDilation': {
-        name: 'Quantum Echo',
-        icon: '👥',
-        description: 'Create temporal copies of yourself that attack independently',
-        color: '#00ffff'
+    
+    // Warp Projectiles + Crop Circle = Dimension Shatter
+    // Projectiles leave crop circle damage zones where they phase
+    'warpProjectiles+cropCircle': {
+        name: 'Dimension Shatter',
+        icon: '💫',
+        description: 'Warp bolts tear reality, leaving expanding damage zones at each phase point!',
+        color: '#aa00ff'
     },
-    // Drone + Chain = Swarm Intelligence
-    'droneSwarm+chainLightning': {
-        name: 'Swarm Intelligence',
-        icon: '🤖',
-        description: 'Drones connect with lightning, creating an electrified net',
-        color: '#88ff88'
+    
+    // Singularity Engine + Timeline Splice = Paradox Core
+    // Black holes persist in your timeline echo, creating trap fields
+    'singularityEngine+timelineSplice': {
+        name: 'Paradox Core',
+        icon: '♾️',
+        description: 'Your time echo creates lingering singularities. Past and future collapse together!',
+        color: '#0088ff'
     },
-    // Orbit + Rift = Event Horizon
-    'energyOrbit+dimensionalRift': {
-        name: 'Event Horizon',
-        icon: '⚫',
-        description: 'Orbiting singularities that pull in and crush enemies',
-        color: '#440088'
+    
+    // Chain Lightning + Radar Jammer = Neural Network
+    // Lightning chains through confused enemies, confusion spreads
+    'chainLightning+radarJammer': {
+        name: 'Neural Network',
+        icon: '🧠',
+        description: 'Lightning spreads confusion. Confused enemies chain lightning to each other!',
+        color: '#ffff00'
+    },
+    
+    // MIB + Close Encounter = Shadow Protocol
+    // MIB agents can abduct enemies instantly, you gain massive XP
+    'menInBlack+closeEncounter': {
+        name: 'Shadow Protocol',
+        icon: '🕳️',
+        description: 'MIB agents gain abduction powers. Erased enemies grant triple XP!',
+        color: '#000000'
+    },
+    
+    // Cattle Mutilator + Energy Orbit = Harvest Moon  
+    // Orbs mark enemies, killing marked enemies heals and drops bonus XP
+    'cattleMutilator+energyOrbit': {
+        name: 'Harvest Moon',
+        icon: '🌙',
+        description: 'Orbiting energy marks enemies for harvest. Kills restore health and attract all XP!',
+        color: '#ffcc00'
     }
 };
 

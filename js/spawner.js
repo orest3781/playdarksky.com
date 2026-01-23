@@ -19,9 +19,9 @@ class Spawner {
             // Focus: Learning mechanics, light combat
             // TUNED: Faster pacing to feel more engaging from the start
             {
-                spawnRate: 0.4,       // Spawn wave every 0.4 seconds (was 0.5)
-                baseCount: 4,         // Start with 4 enemies (was 3)
-                countGrowth: 0.8,     // Add 0.8 enemies per minute (was 0.5)
+                spawnRate: 0.3,       // Spawn wave every 0.3 seconds (was 0.4)
+                baseCount: 5,         // Start with 5 enemies (was 4)
+                countGrowth: 1.0,     // Add 1 enemy per minute (was 0.8)
                 enemies: [
                     { type: 'reconDrone', weight: 35 },    // Weak fodder
                     { type: 'scoutPlane', weight: 30 },    // Slightly tougher
@@ -29,7 +29,7 @@ class Spawner {
                     { type: 'helicopter', weight: 10 }     // Tanky orbiter
                 ],
                 eliteChance: 0.03,    // 3% elite spawn chance (was 2%)
-                maxEnemies: 60,       // Reasonable cap (was 50)
+                maxEnemies: 100,      // Increased cap (was 60)
                 description: 'Light reconnaissance forces'
             },
             
@@ -37,9 +37,9 @@ class Spawner {
             // Full military engagement - organized squadrons
             // Focus: Handling groups, positioning
             {
-                spawnRate: 0.4,       // Faster spawns
-                baseCount: 4,
-                countGrowth: 0.6,
+                spawnRate: 0.3,       // Faster spawns (was 0.4)
+                baseCount: 6,         // More enemies (was 4)
+                countGrowth: 0.8,     // (was 0.6)
                 enemies: [
                     { type: 'patrolJet', weight: 20 },
                     { type: 'fighterSquadron', weight: 35 }, // Swarm behavior
@@ -48,7 +48,7 @@ class Spawner {
                     { type: 'missileFrigate', weight: 10 }   // Slow but dangerous
                 ],
                 eliteChance: 0.05,
-                maxEnemies: 80,
+                maxEnemies: 120,      // (was 80)
                 description: 'Full military response'
             },
             

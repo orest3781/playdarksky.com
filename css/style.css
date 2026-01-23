@@ -3912,12 +3912,16 @@ body:has(#settings-screen.active) #scanlines-overlay {
 .active-weapon-item .weapon-level {
     color: #88ff88;
     font-size: 0.75rem;
+    margin-left: 4px;
 }
 
 .active-weapon-item .weapon-timer {
     font-weight: bold;
-    min-width: 35px;
+    min-width: 40px;
     text-align: right;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid rgba(0, 255, 0, 0.3);
 }
 
 .active-weapon-item .weapon-timer.low {

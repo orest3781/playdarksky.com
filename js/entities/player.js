@@ -855,11 +855,16 @@ class Player {
         weapon.radius = ((data.baseRadius || 0) + (bonuses.radius || 0) * lvl) * this.stats.area;
         weapon.projectiles = (data.baseProjectiles || 1) + (bonuses.projectiles || 0) * lvl;
         weapon.duration = (data.baseDuration || 0) + (bonuses.duration || 0) * lvl;
-        weapon.range = ((data.baseRange || 0) + (bonuses.range || 0) * lvl) * this.stats.area; // Range also affected by area
+        weapon.range = ((data.baseRange || 0) + (bonuses.range || 0) * lvl) * this.stats.area;
         weapon.orbs = (data.baseOrbs || 0) + (bonuses.orbs || 0) * lvl;
         weapon.chains = (data.baseChains || 0) + (bonuses.chains || 0) * lvl;
         weapon.drones = (data.baseDrones || 0) + (bonuses.drones || 0) * lvl;
         weapon.targets = (data.baseTargets || 1) + (bonuses.targets || 0) * lvl;
+        
+        // New weapon stats
+        weapon.marks = (data.baseMarks || 0) + (bonuses.marks || 0) * lvl;
+        weapon.probes = (data.baseProbes || 0) + (bonuses.probes || 0) * lvl;
+        weapon.agents = (data.baseAgents || 0) + (bonuses.agents || 0) * lvl;
         
         // Cooldown calculation (Attack Speed increases frequency, so reduces cooldown)
         const baseCooldown = Math.max(100, (data.baseCooldown || 1000) + (bonuses.cooldown || 0) * lvl);
@@ -1204,6 +1209,43 @@ class Player {
             case 'gravityWave':
                 this.fireGravityWaves(weapon, damage);
                 break;
+            // === NEW WEAPON TYPES ===
+            case 'plasmaBurst':
+                this.firePlasmaBurst(weapon, damage);
+                break;
+            case 'abductionRay':
+                this.fireAbductionRay(weapon, damage);
+                break;
+            case 'warpProjectiles':
+                this.fireWarpProjectiles(weapon, damage);
+                break;
+            case 'ionTrail':
+                this.updateIonTrail(weapon, damage);
+                break;
+            case 'probeSwarm':
+                this.deployProbeSwarm(weapon, damage);
+                break;
+            case 'cropCircle':
+                this.fireCropCircle(weapon, damage);
+                break;
+            case 'cattleMutilator':
+                this.fireCattleMutilator(weapon, damage);
+                break;
+            case 'menInBlack':
+                this.deployMenInBlack(weapon, damage);
+                break;
+            case 'radarJammer':
+                this.fireRadarJammer(weapon, damage);
+                break;
+            case 'singularityEngine':
+                this.updateSingularityEngine(weapon, damage);
+                break;
+            case 'timelineSplice':
+                this.fireTimelineSplice(weapon, damage);
+                break;
+            case 'closeEncounter':
+                this.updateCloseEncounter(weapon, damage);
+                break;
         }
     }
     
@@ -1473,6 +1515,644 @@ class Player {
                     enemy.takeDamage(weapon.damage * dt * 10, this);
                 }
             }
+        }
+        
+        // Update ion trails
+        this.updateIonTrailEffects(weapon, dt);
+        
+        // Update probe swarms
+        this.updateProbeSwarmEffects(weapon, dt);
+        
+        // Update crop circles
+        this.updateCropCircleEffects(weapon, dt);
+        
+        // Update MIB agents
+        this.updateMIBAgents(weapon, dt);
+        
+        // Update singularity charge
+        this.updateSingularityCharge(weapon, dt);
+        
+        // Update close encounter
+        this.updateCloseEncounterEffect(weapon, dt);
+    }
+    
+    // =====================================================
+    // NEW WEAPON IMPLEMENTATIONS
+    // =====================================================
+    
+    // PLASMA BURST - Scales with movement speed
+    firePlasmaBurst(weapon, damage) {
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        const speedRatio = speed / this.maxSpeed;
+        const speedScaling = weapon.data.speedScaling || 2.0;
+        
+        // Damage scales from 1x (stationary) to speedScaling (max speed)
+        const scaledDamage = damage * (1 + speedRatio * (speedScaling - 1));
+        // Radius scales from 1x to 1.5x
+        const scaledRadius = weapon.radius * (1 + speedRatio * 0.5);
+        
+        // Visual effect - bigger burst when moving fast
+        this.game.particles.empWave(this.x, this.y, scaledRadius);
+        if (speedRatio > 0.5) {
+            // Extra visual when moving fast
+            this.game.particles.explosion(this.x, this.y, weapon.data.color, 15);
+        }
+        this.game.playSound('plasma');
+        
+        // Damage enemies in radius
+        for (const enemy of this.game.enemies) {
+            const dist = Utils.distance(this.x, this.y, enemy.x, enemy.y);
+            if (dist <= scaledRadius + enemy.radius) {
+                enemy.takeDamage(scaledDamage, this);
+                // Knockback based on speed
+                if (speedRatio > 0.3) {
+                    const angle = Utils.angle(this.x, this.y, enemy.x, enemy.y);
+                    const knockback = 50 * speedRatio;
+                    enemy.knockbackX = Math.cos(angle) * knockback;
+                    enemy.knockbackY = Math.sin(angle) * knockback;
+                }
+            }
+        }
+    }
+    
+    // ABDUCTION RAY - Mark enemies for bonus damage
+    fireAbductionRay(weapon, damage) {
+        const range = weapon.range || weapon.data.baseRange || 250;
+        const markCount = weapon.marks || weapon.data.baseMarks || 3;
+        const markDuration = weapon.data.markDuration || 4000;
+        const enemies = this.game.enemyPool.getActive();
+        
+        // Sort by distance
+        const targets = [];
+        for (const enemy of enemies) {
+            if (enemy.abductionMark) continue; // Skip already marked
+            const dist = Utils.distance(this.x, this.y, enemy.x, enemy.y);
+            if (dist < range) {
+                targets.push({ enemy, dist });
+            }
+        }
+        targets.sort((a, b) => a.dist - b.dist);
+        
+        // Mark enemies
+        const toMark = targets.slice(0, markCount);
+        for (const target of toMark) {
+            const enemy = target.enemy;
+            enemy.abductionMark = {
+                duration: markDuration / 1000,
+                damageBonus: weapon.data.markDamageBonus || 0.5,
+                color: weapon.data.color
+            };
+            
+            // Visual beam to marked enemy
+            this.game.addBeamEffect(this.x, this.y, enemy.x, enemy.y, weapon.data.color);
+            this.game.particles.explosion(enemy.x, enemy.y, '#00ff88', 10);
+            
+            // Small direct damage
+            enemy.takeDamage(damage, this);
+        }
+        
+        if (toMark.length > 0) {
+            this.game.playSound('shoot');
+        }
+    }
+    
+    // WARP PROJECTILES - Phase through first enemy, hit from behind
+    fireWarpProjectiles(weapon, damage) {
+        const count = weapon.projectiles || weapon.data.baseProjectiles || 3;
+        const range = weapon.range || weapon.data.baseRange || 350;
+        const warpDistance = weapon.data.warpDistance || 80;
+        const enemies = this.game.enemyPool.getActive();
+        
+        // Find nearby targets
+        const targets = [];
+        for (const enemy of enemies) {
+            const dist = Utils.distance(this.x, this.y, enemy.x, enemy.y);
+            if (dist < range) {
+                targets.push({ enemy, dist });
+            }
+        }
+        targets.sort((a, b) => a.dist - b.dist);
+        
+        this.game.playSound('shoot', { volume: 0.35, pitchVariation: 0.2 });
+        
+        // Fire at closest targets
+        for (let i = 0; i < Math.min(count, targets.length); i++) {
+            const enemy = targets[i].enemy;
+            
+            // Visual: beam from player, disappears, reappears behind enemy
+            const angle = Utils.angle(this.x, this.y, enemy.x, enemy.y);
+            const midX = (this.x + enemy.x) / 2;
+            const midY = (this.y + enemy.y) / 2;
+            
+            // First visual: beam to midpoint
+            this.game.addBeamEffect(this.x, this.y, midX, midY, weapon.data.color);
+            
+            // Calculate behind position
+            const behindX = enemy.x + Math.cos(angle) * warpDistance;
+            const behindY = enemy.y + Math.sin(angle) * warpDistance;
+            
+            // Second visual: beam from behind through enemy
+            this.game.addBeamEffect(behindX, behindY, enemy.x, enemy.y, weapon.data.color);
+            
+            // Warp effect particles
+            this.game.particles.explosion(midX, midY, '#aa44ff', 5);
+            this.game.particles.explosion(behindX, behindY, '#aa44ff', 8);
+            
+            // Deal damage (bonus for flanking)
+            enemy.takeDamage(damage * 1.25, this);
+        }
+        
+        // If no targets, fire in facing direction
+        if (targets.length === 0) {
+            for (let i = 0; i < count; i++) {
+                const spread = (i - (count - 1) / 2) * 0.3;
+                const angle = this.facingAngle + spread;
+                this.game.spawnProjectile({
+                    x: this.x,
+                    y: this.y,
+                    angle,
+                    speed: 500,
+                    damage,
+                    radius: 8,
+                    color: weapon.data.color,
+                    friendly: true,
+                    pierce: 1
+                });
+            }
+        }
+    }
+    
+    // ION TRAIL - Leave damaging trail while moving
+    updateIonTrail(weapon, damage) {
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        
+        // Only create trail when moving
+        if (speed < 30) return;
+        
+        // Initialize trail array if needed
+        if (!weapon.trailSegments) {
+            weapon.trailSegments = [];
+        }
+        
+        // Add new trail segment
+        weapon.trailSegments.push({
+            x: this.x,
+            y: this.y,
+            damage: damage,
+            width: (weapon.data.trailWidth || 30) + (weapon.level - 1) * 5,
+            duration: (weapon.data.trailDuration + (weapon.level - 1) * 200) / 1000,
+            color: weapon.data.color
+        });
+        
+        // Limit trail length
+        if (weapon.trailSegments.length > 100) {
+            weapon.trailSegments.shift();
+        }
+    }
+    
+    updateIonTrailEffects(weapon, dt) {
+        if (!weapon.trailSegments || weapon.data.type !== 'ionTrail') return;
+        
+        for (let i = weapon.trailSegments.length - 1; i >= 0; i--) {
+            const segment = weapon.trailSegments[i];
+            segment.duration -= dt;
+            
+            // Damage enemies touching trail
+            for (const enemy of this.game.enemies) {
+                const dist = Utils.distance(segment.x, segment.y, enemy.x, enemy.y);
+                if (dist <= segment.width / 2 + enemy.radius) {
+                    enemy.takeDamage(segment.damage * dt, this);
+                }
+            }
+            
+            if (segment.duration <= 0) {
+                weapon.trailSegments.splice(i, 1);
+            }
+        }
+    }
+    
+    // PROBE SWARM - Deploy probes that orbit then attack
+    deployProbeSwarm(weapon, damage) {
+        const count = weapon.probes || weapon.data.baseProbes || 4;
+        const orbitTime = weapon.data.orbitTime || 2000;
+        
+        // Initialize probes array if needed
+        if (!weapon.activeProbes) {
+            weapon.activeProbes = [];
+        }
+        
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * Math.PI * 2;
+            weapon.activeProbes.push({
+                x: this.x,
+                y: this.y,
+                angle: angle,
+                orbitRadius: 50,
+                damage: damage,
+                state: 'orbiting',
+                orbitTime: orbitTime / 1000,
+                target: null,
+                color: weapon.data.color
+            });
+        }
+        
+        this.game.playSound('shoot');
+    }
+    
+    updateProbeSwarmEffects(weapon, dt) {
+        if (!weapon.activeProbes || weapon.data.type !== 'probeSwarm') return;
+        
+        for (let i = weapon.activeProbes.length - 1; i >= 0; i--) {
+            const probe = weapon.activeProbes[i];
+            
+            if (probe.state === 'orbiting') {
+                // Orbit around player
+                probe.angle += dt * 4;
+                probe.x = this.x + Math.cos(probe.angle) * probe.orbitRadius;
+                probe.y = this.y + Math.sin(probe.angle) * probe.orbitRadius;
+                probe.orbitTime -= dt;
+                
+                if (probe.orbitTime <= 0) {
+                    // Find target
+                    let nearest = null;
+                    let nearestDist = 400;
+                    for (const enemy of this.game.enemies) {
+                        const dist = Utils.distance(probe.x, probe.y, enemy.x, enemy.y);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearest = enemy;
+                        }
+                    }
+                    probe.target = nearest;
+                    probe.state = 'attacking';
+                }
+            } else if (probe.state === 'attacking') {
+                if (probe.target && probe.target.active) {
+                    // Move toward target
+                    const angle = Utils.angle(probe.x, probe.y, probe.target.x, probe.target.y);
+                    probe.x += Math.cos(angle) * 400 * dt;
+                    probe.y += Math.sin(angle) * 400 * dt;
+                    
+                    // Check collision
+                    const dist = Utils.distance(probe.x, probe.y, probe.target.x, probe.target.y);
+                    if (dist < 20) {
+                        // Explode!
+                        probe.target.takeDamage(probe.damage, this);
+                        this.game.particles.explosion(probe.x, probe.y, probe.color, 12);
+                        this.game.playSound('explosion', { volume: 0.3 });
+                        weapon.activeProbes.splice(i, 1);
+                    }
+                } else {
+                    // No target, just explode
+                    this.game.particles.explosion(probe.x, probe.y, probe.color, 8);
+                    weapon.activeProbes.splice(i, 1);
+                }
+            }
+        }
+    }
+    
+    // CROP CIRCLE - Expanding ring with edge damage bonus
+    fireCropCircle(weapon, damage) {
+        if (!weapon.activeCircles) {
+            weapon.activeCircles = [];
+        }
+        
+        weapon.activeCircles.push({
+            x: this.x,
+            y: this.y,
+            currentRadius: 0,
+            maxRadius: weapon.radius || weapon.data.baseRadius || 120,
+            expandTime: (weapon.data.expandTime || 800) / 1000,
+            damage: damage,
+            edgeMultiplier: weapon.data.edgeDamageMultiplier || 3.0,
+            color: weapon.data.color,
+            hitEnemies: new Set()
+        });
+        
+        this.game.playSound('plasma');
+    }
+    
+    updateCropCircleEffects(weapon, dt) {
+        if (!weapon.activeCircles || weapon.data.type !== 'cropCircle') return;
+        
+        for (let i = weapon.activeCircles.length - 1; i >= 0; i--) {
+            const circle = weapon.activeCircles[i];
+            
+            // Expand the circle
+            const expandRate = circle.maxRadius / circle.expandTime;
+            circle.currentRadius += expandRate * dt;
+            
+            // Check enemies at the expanding edge
+            for (const enemy of this.game.enemies) {
+                if (circle.hitEnemies.has(enemy)) continue;
+                
+                const dist = Utils.distance(circle.x, circle.y, enemy.x, enemy.y);
+                
+                // Hit enemies at the ring edge (within 20 units of current radius)
+                if (dist <= circle.currentRadius + enemy.radius && dist >= circle.currentRadius - 20) {
+                    // Calculate damage based on distance from center
+                    const distRatio = dist / circle.maxRadius;
+                    const damageMult = 1 + (circle.edgeMultiplier - 1) * distRatio;
+                    
+                    enemy.takeDamage(circle.damage * damageMult, this);
+                    circle.hitEnemies.add(enemy);
+                    
+                    // Visual feedback for edge hits
+                    if (distRatio > 0.7) {
+                        this.game.particles.explosion(enemy.x, enemy.y, '#aaff00', 10);
+                    }
+                }
+            }
+            
+            // Remove when fully expanded
+            if (circle.currentRadius >= circle.maxRadius) {
+                weapon.activeCircles.splice(i, 1);
+            }
+        }
+    }
+    
+    // CATTLE MUTILATOR - Mark random enemy for health/XP bonus on kill
+    fireCattleMutilator(weapon, damage) {
+        const enemies = this.game.enemyPool.getActive();
+        if (enemies.length === 0) return;
+        
+        // Pick a random enemy that isn't already marked
+        const unmarked = enemies.filter(e => !e.cattleMark);
+        if (unmarked.length === 0) return;
+        
+        const target = unmarked[Math.floor(Math.random() * unmarked.length)];
+        
+        target.cattleMark = {
+            duration: (weapon.data.markDuration + (weapon.level - 1) * 1000) / 1000,
+            healthDrop: (weapon.data.healthDropAmount || 15) + (weapon.level - 1) * 5,
+            xpPullRadius: (weapon.data.xpPullRadius || 500) + (weapon.level - 1) * 100,
+            color: weapon.data.color
+        };
+        
+        // Visual
+        this.game.addBeamEffect(this.x, this.y, target.x, target.y, '#ff4488');
+        this.game.particles.explosion(target.x, target.y, '#ff4488', 15);
+        this.game.playSound('shoot');
+    }
+    
+    // MEN IN BLACK - Spawn agents that erase enemies
+    deployMenInBlack(weapon, damage) {
+        const count = weapon.agents || weapon.data.baseAgents || 2;
+        
+        if (!weapon.activeMIB) {
+            weapon.activeMIB = [];
+        }
+        
+        for (let i = 0; i < count; i++) {
+            const angle = Utils.random(0, Math.PI * 2);
+            weapon.activeMIB.push({
+                x: this.x + Math.cos(angle) * 30,
+                y: this.y + Math.sin(angle) * 30,
+                damage: damage,
+                percentDamage: weapon.data.percentDamage + (weapon.level - 1) * 0.02,
+                executeThreshold: weapon.data.executeThreshold || 0.2,
+                duration: (weapon.data.agentDuration || 5000) / 1000,
+                target: null,
+                color: weapon.data.color
+            });
+        }
+        
+        this.game.playSound('shoot');
+    }
+    
+    updateMIBAgents(weapon, dt) {
+        if (!weapon.activeMIB || weapon.data.type !== 'menInBlack') return;
+        
+        for (let i = weapon.activeMIB.length - 1; i >= 0; i--) {
+            const mib = weapon.activeMIB[i];
+            mib.duration -= dt;
+            
+            if (mib.duration <= 0) {
+                // Fade out
+                this.game.particles.explosion(mib.x, mib.y, '#222222', 5);
+                weapon.activeMIB.splice(i, 1);
+                continue;
+            }
+            
+            // Find target (prioritize low health)
+            if (!mib.target || !mib.target.active) {
+                let best = null;
+                let bestScore = -1;
+                
+                for (const enemy of this.game.enemies) {
+                    const dist = Utils.distance(mib.x, mib.y, enemy.x, enemy.y);
+                    if (dist > 300) continue;
+                    
+                    // Prioritize low HP ratio enemies
+                    const hpRatio = enemy.health / enemy.maxHealth;
+                    const score = (1 - hpRatio) + (1 - dist / 300) * 0.5;
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        best = enemy;
+                    }
+                }
+                mib.target = best;
+            }
+            
+            if (mib.target && mib.target.active) {
+                // Move toward target
+                const angle = Utils.angle(mib.x, mib.y, mib.target.x, mib.target.y);
+                mib.x += Math.cos(angle) * 250 * dt;
+                mib.y += Math.sin(angle) * 250 * dt;
+                
+                // Check collision
+                const dist = Utils.distance(mib.x, mib.y, mib.target.x, mib.target.y);
+                if (dist < 25) {
+                    const enemy = mib.target;
+                    const hpRatio = enemy.health / enemy.maxHealth;
+                    
+                    if (hpRatio <= mib.executeThreshold) {
+                        // Execute!
+                        enemy.takeDamage(enemy.health + 100, this);
+                        this.game.particles.explosion(enemy.x, enemy.y, '#ffffff', 20);
+                    } else {
+                        // % damage + flat damage
+                        const totalDamage = mib.damage + enemy.maxHealth * mib.percentDamage;
+                        enemy.takeDamage(totalDamage, this);
+                    }
+                    
+                    mib.target = null; // Find new target
+                }
+            }
+        }
+    }
+    
+    // RADAR JAMMER - Confuse enemies to attack each other
+    fireRadarJammer(weapon, damage) {
+        const radius = (weapon.radius || weapon.data.baseRadius || 100) + (weapon.level - 1) * 20;
+        const confuseDuration = (weapon.data.confuseDuration + (weapon.level - 1) * 300) / 1000;
+        
+        // Visual pulse
+        this.game.particles.empWave(this.x, this.y, radius);
+        this.game.playSound('plasma');
+        
+        // Confuse enemies in radius
+        let confused = 0;
+        for (const enemy of this.game.enemies) {
+            const dist = Utils.distance(this.x, this.y, enemy.x, enemy.y);
+            if (dist <= radius + enemy.radius) {
+                enemy.confused = {
+                    duration: confuseDuration,
+                    color: weapon.data.color
+                };
+                confused++;
+                
+                // Visual on confused enemy
+                this.game.particles.explosion(enemy.x, enemy.y, '#ffaa00', 5);
+            }
+        }
+    }
+    
+    // SINGULARITY ENGINE - Charge while stationary, release black hole
+    updateSingularityEngine(weapon, damage) {
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        
+        if (!weapon.singularityCharge) {
+            weapon.singularityCharge = 0;
+        }
+        
+        const chargeTime = (weapon.data.chargeTime - (weapon.level - 1) * 150) / 1000;
+        
+        if (speed < 20) {
+            // Charging (stationary)
+            weapon.singularityCharge += 1 / chargeTime;
+            
+            // Visual feedback - growing energy
+            if (Math.random() > 0.7) {
+                const angle = Utils.random(0, Math.PI * 2);
+                const dist = Utils.random(30, 60);
+                this.game.particles.spawn(
+                    this.x + Math.cos(angle) * dist,
+                    this.y + Math.sin(angle) * dist,
+                    '#440088',
+                    3
+                );
+            }
+            
+            if (weapon.singularityCharge >= 1) {
+                // FIRE!
+                this.fireSingularityBlast(weapon, damage);
+                weapon.singularityCharge = 0;
+            }
+        } else {
+            // Moving - lose charge
+            weapon.singularityCharge = Math.max(0, weapon.singularityCharge - 0.5);
+        }
+    }
+    
+    fireSingularityBlast(weapon, damage) {
+        const radius = (weapon.radius || weapon.data.baseRadius || 150) + (weapon.level - 1) * 25;
+        const pullStrength = weapon.data.pullStrength || 200;
+        
+        // Massive visual
+        this.game.particles.explosion(this.x, this.y, '#440088', 30);
+        this.game.particles.empWave(this.x, this.y, radius);
+        this.game.screenShake(15);
+        this.game.screenFlash.add('#440088', 0.3, 0.5);
+        this.game.playSound('explosion');
+        
+        // Damage and pull all enemies
+        for (const enemy of this.game.enemies) {
+            const dist = Utils.distance(this.x, this.y, enemy.x, enemy.y);
+            if (dist <= radius + enemy.radius) {
+                // Damage falls off slightly with distance
+                const distRatio = 1 - (dist / radius) * 0.3;
+                enemy.takeDamage(damage * distRatio, this);
+                
+                // Pull toward center
+                const angle = Utils.angle(enemy.x, enemy.y, this.x, this.y);
+                enemy.knockbackX = Math.cos(angle) * pullStrength;
+                enemy.knockbackY = Math.sin(angle) * pullStrength;
+            }
+        }
+    }
+    
+    updateSingularityCharge(weapon, dt) {
+        // Visual indicator handled in updateSingularityEngine
+    }
+    
+    // TIMELINE SPLICE - Create echo that replays movement
+    fireTimelineSplice(weapon, damage) {
+        // Record current position history
+        if (!this.positionHistory) {
+            this.positionHistory = [];
+        }
+        
+        const echoDuration = (weapon.data.echoDuration + (weapon.level - 1) * 500) / 1000;
+        const echoDelay = weapon.data.echoDelay / 1000;
+        const echoDamagePercent = weapon.data.echoDamagePercent + (weapon.level - 1) * 0.05;
+        
+        // Create echo effect
+        if (!weapon.activeEcho) {
+            weapon.activeEcho = {
+                positions: [...this.positionHistory].slice(-Math.floor(echoDuration * 60)),
+                currentIndex: 0,
+                damagePercent: echoDamagePercent,
+                duration: echoDuration,
+                color: weapon.data.color
+            };
+        }
+        
+        this.game.playSound('shoot');
+        this.game.screenFlash.add('#00ffff', 0.2, 0.3);
+    }
+    
+    // CLOSE ENCOUNTER - Abduct enemies that touch you
+    updateCloseEncounter(weapon, damage) {
+        // This runs continuously
+    }
+    
+    updateCloseEncounterEffect(weapon, dt) {
+        if (weapon.data.type !== 'closeEncounter') return;
+        
+        const abductRadius = (weapon.data.abductRadius || 25) + (weapon.level - 1) * 5;
+        const xpBonus = (weapon.data.xpBonus || 2.0) + (weapon.level - 1) * 0.25;
+        const maxAbducts = (weapon.data.maxAbductsPerSecond || 3) + (weapon.level - 1);
+        
+        if (!weapon.abductCooldown) weapon.abductCooldown = 0;
+        weapon.abductCooldown -= dt;
+        
+        if (weapon.abductCooldown > 0) return;
+        
+        let abducted = 0;
+        for (const enemy of this.game.enemies) {
+            if (abducted >= maxAbducts) break;
+            
+            const dist = Utils.distance(this.x, this.y, enemy.x, enemy.y);
+            if (dist <= abductRadius + enemy.radius) {
+                // Calculate bonus XP
+                const bonusXP = (enemy.xpValue || 5) * xpBonus;
+                
+                // Abduct!
+                enemy.takeDamage(9999, this);
+                abducted++;
+                
+                // Spawn bonus XP
+                for (let i = 0; i < Math.ceil(bonusXP / 5); i++) {
+                    const angle = Utils.random(0, Math.PI * 2);
+                    const spawnDist = Utils.random(20, 50);
+                    this.game.spawnPickup('xp', 
+                        this.x + Math.cos(angle) * spawnDist,
+                        this.y + Math.sin(angle) * spawnDist,
+                        5
+                    );
+                }
+                
+                // Visual - beam up effect
+                this.game.particles.explosion(enemy.x, enemy.y, '#ffffff', 15);
+                this.game.addBeamEffect(enemy.x, enemy.y, enemy.x, enemy.y - 100, '#ffffff');
+            }
+        }
+        
+        if (abducted > 0) {
+            weapon.abductCooldown = 1 / maxAbducts;
+            this.game.playSound('pickupXP', { volume: 0.3 });
         }
     }
     
@@ -2045,6 +2725,153 @@ class Player {
                 ctx.arc(orbX, orbY, 15, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.globalAlpha = 1;
+            }
+            
+            // === NEW WEAPON EFFECT VISUALS ===
+            
+            // Ion Trail segments
+            if (weapon.trailSegments && weapon.data.type === 'ionTrail') {
+                for (const segment of weapon.trailSegments) {
+                    const sx = segment.x - camera.x;
+                    const sy = segment.y - camera.y;
+                    const alpha = segment.duration / ((weapon.data.trailDuration || 2000) / 1000);
+                    
+                    ctx.globalAlpha = alpha * 0.5;
+                    ctx.fillStyle = segment.color || '#00ffff';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, segment.width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+            
+            // Probe Swarm
+            if (weapon.activeProbes && weapon.data.type === 'probeSwarm') {
+                for (const probe of weapon.activeProbes) {
+                    const px = probe.x - camera.x;
+                    const py = probe.y - camera.y;
+                    
+                    // Probe body
+                    ctx.fillStyle = probe.color || '#88ffaa';
+                    ctx.beginPath();
+                    ctx.arc(px, py, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Glow
+                    ctx.globalAlpha = 0.4;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // State indicator
+                    ctx.globalAlpha = 1;
+                    if (probe.state === 'attacking') {
+                        ctx.strokeStyle = '#ff0000';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(px - 5, py - 5);
+                        ctx.lineTo(px + 5, py + 5);
+                        ctx.moveTo(px + 5, py - 5);
+                        ctx.lineTo(px - 5, py + 5);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            // Crop Circles (expanding rings)
+            if (weapon.activeCircles && weapon.data.type === 'cropCircle') {
+                for (const circle of weapon.activeCircles) {
+                    const cx = circle.x - camera.x;
+                    const cy = circle.y - camera.y;
+                    
+                    // Inner circle (weak damage)
+                    ctx.globalAlpha = 0.2;
+                    ctx.fillStyle = circle.color || '#aaff00';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, circle.currentRadius * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Expanding ring edge (strong damage)
+                    ctx.globalAlpha = 0.8;
+                    ctx.strokeStyle = circle.color || '#aaff00';
+                    ctx.lineWidth = 8;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, circle.currentRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Crop pattern decoration
+                    ctx.globalAlpha = 0.4;
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i / 6) * Math.PI * 2;
+                        ctx.beginPath();
+                        ctx.moveTo(cx, cy);
+                        ctx.lineTo(
+                            cx + Math.cos(angle) * circle.currentRadius,
+                            cy + Math.sin(angle) * circle.currentRadius
+                        );
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1;
+                }
+            }
+            
+            // MIB Agents
+            if (weapon.activeMIB && weapon.data.type === 'menInBlack') {
+                for (const mib of weapon.activeMIB) {
+                    const mx = mib.x - camera.x;
+                    const my = mib.y - camera.y;
+                    
+                    // Agent body (dark figure)
+                    ctx.fillStyle = '#111111';
+                    ctx.beginPath();
+                    ctx.ellipse(mx, my, 8, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Hat
+                    ctx.fillRect(mx - 10, my - 14, 20, 4);
+                    
+                    // Sunglasses
+                    ctx.fillStyle = '#333333';
+                    ctx.fillRect(mx - 6, my - 8, 5, 3);
+                    ctx.fillRect(mx + 1, my - 8, 5, 3);
+                    
+                    // Shadow
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.ellipse(mx, my + 10, 10, 4, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+            
+            // Singularity charge indicator
+            if (weapon.singularityCharge && weapon.singularityCharge > 0 && weapon.data.type === 'singularityEngine') {
+                const sx = this.x - camera.x;
+                const sy = this.y - camera.y;
+                const charge = weapon.singularityCharge;
+                
+                // Growing dark circle
+                ctx.globalAlpha = charge * 0.6;
+                ctx.fillStyle = '#220044';
+                ctx.beginPath();
+                ctx.arc(sx, sy, 30 + charge * 50, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Charge ring
+                ctx.strokeStyle = '#8800ff';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 40, -Math.PI / 2, -Math.PI / 2 + charge * Math.PI * 2);
+                ctx.stroke();
+                
+                // Percent text
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 14px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(Math.floor(charge * 100) + '%', sx, sy + 5);
             }
         }
     }

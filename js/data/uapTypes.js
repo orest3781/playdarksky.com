@@ -17,7 +17,7 @@ const UAP_TYPES = {
         icon: '🛸',
         color: '#88ccff',
         unlockRequirement: null, // Default starter
-        startingWeapon: 'gravityWave',
+        startingWeapon: 'warpProjectiles',
         
         stats: {
             maxHealth: 100,
@@ -58,7 +58,7 @@ const UAP_TYPES = {
         icon: '🔺',
         color: '#333333',
         unlockRequirement: { type: 'survival_time', value: 1800 },
-        startingWeapon: 'empPulse',
+        startingWeapon: 'plasmaBurst',
         
         stats: {
             maxHealth: 70,
@@ -103,7 +103,7 @@ const UAP_TYPES = {
         icon: '🔮',
         color: '#ffff00',
         unlockRequirement: { type: 'level_reached', value: 25 },
-        startingWeapon: 'energyOrbit',
+        startingWeapon: 'probeSwarm',
         
         stats: {
             maxHealth: 60,
@@ -153,7 +153,7 @@ const UAP_TYPES = {
         icon: '🚀',
         color: '#aaaaaa',
         unlockRequirement: { type: 'collection_percent', value: 75 },
-        startingWeapon: 'droneSwarm',
+        startingWeapon: 'menInBlack',
         
         stats: {
             maxHealth: 180,
@@ -199,7 +199,7 @@ const UAP_TYPES = {
         icon: '💊',
         color: '#ffffff',
         unlockRequirement: { type: 'boss_kills', value: 10 },
-        startingWeapon: 'gravityWave',
+        startingWeapon: 'ionTrail',
         
         stats: {
             maxHealth: 85,
@@ -249,7 +249,7 @@ const UAP_TYPES = {
         icon: '🪐',
         color: '#cc8844',
         unlockRequirement: { type: 'events_investigated', value: 15 },
-        startingWeapon: 'tractorBeam',
+        startingWeapon: 'abductionRay',
         
         stats: {
             maxHealth: 110,
@@ -294,7 +294,7 @@ const UAP_TYPES = {
         icon: '🎐',
         color: '#44ffaa',
         unlockRequirement: { type: 'survival_time_total', value: 18000 },
-        startingWeapon: 'chainLightning',
+        startingWeapon: 'radarJammer',
         
         stats: {
             maxHealth: 95,
@@ -345,7 +345,7 @@ const UAP_TYPES = {
         icon: '🧊',
         color: '#8888ff',
         unlockRequirement: { type: 'prestige_level', value: 5 },
-        startingWeapon: 'gravityWell',
+        startingWeapon: 'singularityEngine',
         
         stats: {
             maxHealth: 140,
@@ -391,7 +391,7 @@ const UAP_TYPES = {
         icon: '🌀',
         color: '#ff8844',
         unlockRequirement: { type: 'achievement', value: 'arsenal' },
-        startingWeapon: 'gravityWave',
+        startingWeapon: 'cropCircle',
         
         stats: {
             maxHealth: 75,
@@ -434,7 +434,7 @@ const UAP_TYPES = {
         icon: '💨',
         color: '#44aaff',
         unlockRequirement: { type: 'achievement', value: 'speedrunner' },
-        startingWeapon: 'gravityWave',
+        startingWeapon: 'plasmaBurst',
         
         stats: {
             maxHealth: 65,

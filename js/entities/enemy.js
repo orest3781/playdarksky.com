@@ -112,6 +112,36 @@ class Enemy {
             this.slowAmount = 1;
         }
         
+        // === NEW WEAPON EFFECT TIMERS ===
+        // Abduction Ray mark timer
+        if (this.abductionMark) {
+            this.abductionMark.duration -= dt;
+            if (this.abductionMark.duration <= 0) {
+                this.abductionMark = null;
+            }
+        }
+        
+        // Cattle Mutilator mark timer
+        if (this.cattleMark) {
+            this.cattleMark.duration -= dt;
+            if (this.cattleMark.duration <= 0) {
+                this.cattleMark = null;
+            }
+        }
+        
+        // Radar Jammer confusion effect
+        if (this.confused) {
+            this.confused.duration -= dt;
+            if (this.confused.duration <= 0) {
+                this.confused = null;
+            } else {
+                // Attack other enemies instead of player!
+                this.attackOtherEnemies(effectiveDt);
+                // Skip normal update
+                return;
+            }
+        }
+        
         // Apply knockback
         this.x += this.knockbackX * effectiveDt;
         this.y += this.knockbackY * effectiveDt;
@@ -476,6 +506,13 @@ class Enemy {
     }
     
     takeDamage(amount, source, isCrit = false) {
+        // Apply Abduction Ray mark bonus damage
+        if (this.abductionMark) {
+            amount *= (1 + this.abductionMark.damageBonus);
+            // Visual indicator for bonus damage
+            this.game.particles.spawn(this.x, this.y - this.radius - 10, '#00ff88', 3);
+        }
+        
         this.health -= amount;
         this.hitFlash = 0.1;
         
@@ -509,8 +546,73 @@ class Enemy {
         this.slowTime = Math.max(this.slowTime, duration);
     }
     
+    // Confused enemies attack other enemies (Radar Jammer effect)
+    attackOtherEnemies(dt) {
+        // Find nearest other enemy
+        let nearest = null;
+        let nearestDist = 150;
+        
+        for (const enemy of this.game.enemies) {
+            if (enemy === this || !enemy.active) continue;
+            const dist = Utils.distance(this.x, this.y, enemy.x, enemy.y);
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = enemy;
+            }
+        }
+        
+        if (nearest) {
+            // Move toward and attack
+            const angle = Utils.angle(this.x, this.y, nearest.x, nearest.y);
+            const effectiveSpeed = this.speed * this.slowAmount * 0.8;
+            this.x += Math.cos(angle) * effectiveSpeed * dt;
+            this.y += Math.sin(angle) * effectiveSpeed * dt;
+            this.rotation = angle;
+            
+            // Deal damage if touching
+            if (nearestDist < this.radius + nearest.radius) {
+                nearest.takeDamage(this.damage * dt * 3, this);
+            }
+        } else {
+            // Wander randomly when no target
+            if (!this.confusedWanderAngle || Math.random() < 0.02) {
+                this.confusedWanderAngle = Utils.random(0, Math.PI * 2);
+            }
+            const wanderSpeed = this.speed * 0.3;
+            this.x += Math.cos(this.confusedWanderAngle) * wanderSpeed * dt;
+            this.y += Math.sin(this.confusedWanderAngle) * wanderSpeed * dt;
+        }
+        
+        // Visual indicator
+        if (Math.random() < 0.1) {
+            this.game.particles.spawn(this.x, this.y - this.radius - 15, '#ffaa00', 2);
+        }
+    }
+    
     die() {
         this.active = false;
+        
+        // === CATTLE MUTILATOR BONUS ===
+        if (this.cattleMark) {
+            // Drop health
+            this.game.spawnPickup('health', this.x, this.y, this.cattleMark.healthDrop);
+            
+            // Pull all XP in radius toward player
+            const pullRadius = this.cattleMark.xpPullRadius;
+            for (const pickup of this.game.pickups) {
+                if (pickup.type !== 'xp' || !pickup.active) continue;
+                const dist = Utils.distance(this.x, this.y, pickup.x, pickup.y);
+                if (dist < pullRadius) {
+                    // Mark for instant collection
+                    pickup.magnetized = true;
+                    pickup.magnetTarget = this.game.player;
+                }
+            }
+            
+            // Visual celebration
+            this.game.particles.explosion(this.x, this.y, '#ff4488', 20);
+            this.game.screenFlash.add('#ff4488', 0.2, 0.3);
+        }
         
         // === COMBO SYSTEM ===
         let xpMultiplier = 1.0;
@@ -751,6 +853,52 @@ class Enemy {
                 ctx.textAlign = 'center';
                 ctx.fillText(this.data.name, screenX, barY - 20);
             }
+        }
+        
+        // === WEAPON EFFECT VISUAL INDICATORS ===
+        
+        // Abduction Ray mark (green alien symbol)
+        if (this.abductionMark) {
+            ctx.fillStyle = this.abductionMark.color || '#00ff88';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('👽', screenX, screenY - this.radius - 20);
+            
+            // Pulsing ring
+            const pulse = Math.sin(this.game.gameTime * 8) * 0.3 + 0.7;
+            ctx.strokeStyle = `rgba(0, 255, 136, ${pulse * 0.5})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, this.radius + 8, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        // Cattle Mutilator mark (cow symbol with larger indicator)
+        if (this.cattleMark) {
+            ctx.fillStyle = this.cattleMark.color || '#ff4488';
+            ctx.font = '18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🐄', screenX, screenY - this.radius - 25);
+            
+            // Bright border
+            ctx.strokeStyle = '#ff4488';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, this.radius + 12, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Confused state (spiral/dizzy indicator)
+        if (this.confused) {
+            ctx.fillStyle = '#ffaa00';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            const spinAngle = this.game.gameTime * 5;
+            const spiralX = screenX + Math.cos(spinAngle) * 8;
+            const spiralY = screenY - this.radius - 15 + Math.sin(spinAngle) * 3;
+            ctx.fillText('💫', spiralX, spiralY);
         }
     }
     

@@ -1132,228 +1132,299 @@ const ENEMY_TYPES = {
 // =====================================================
 const WEAPONS = {
     // ===== STARTING WEAPONS =====
-    empPulse: {
-        name: 'EMP Pulse',
-        icon: '⚡',
-        description: 'Periodic electromagnetic pulse that damages all nearby enemies',
-        type: 'aoe',
+    // Each starter has a unique mechanic that rewards different playstyles
+    
+    plasmaBurst: {
+        name: 'Plasma Burst',
+        icon: '💥',
+        description: 'AOE pulse that scales with your speed - move fast, hit hard!',
+        type: 'plasmaBurst',
         tier: 'starter',
-        baseDamage: 100,           // Kills reconDrone (60 HP) easily
-        baseRadius: 90,
-        baseCooldown: 1400,        // ~0.71 attacks/sec
+        baseDamage: 80,            // Base damage when stationary
+        baseRadius: 70,
+        baseCooldown: 1200,
         maxLevel: 8,
         levelBonuses: {
-            damage: 35,            // Level 8: 345 damage
-            radius: 15,            // Level 8: 195 radius
-            cooldown: -100         // Level 8: 700ms (1.43 attacks/sec)
+            damage: 30,            // Level 8: 290 damage
+            radius: 12,            // Level 8: 154 radius
+            cooldown: -80          // Level 8: 640ms
         },
-        color: '#00ffcc',
-        dps: 71                    // Base DPS reference
+        speedScaling: 2.0,         // At max speed: 2x damage, 1.5x radius
+        color: '#ff6600',
+        dps: 67
     },
-    gravityWell: {
-        name: 'Gravity Well',
+    
+    abductionRay: {
+        name: 'Abduction Ray',
+        icon: '👽',
+        description: 'Mark enemies for abduction - marked targets take +50% damage from all sources',
+        type: 'abductionRay',
+        tier: 'starter',
+        baseDamage: 50,            // Low direct damage
+        baseMarks: 3,              // Enemies marked per activation
+        baseCooldown: 2000,
+        baseRange: 250,
+        markDuration: 4000,        // 4 seconds marked
+        markDamageBonus: 0.5,      // +50% damage from all sources
+        maxLevel: 8,
+        levelBonuses: {
+            damage: 20,            // Level 8: 190 damage
+            marks: 1,              // Level 8: 10 marks
+            cooldown: -100,        // Level 8: 1300ms
+            range: 30              // Level 8: 460 range
+        },
+        color: '#00ff88',
+        dps: 25
+    },
+    
+    warpProjectiles: {
+        name: 'Warp Bolts',
         icon: '🌀',
-        description: 'Creates gravity distortions that slow and damage enemies over time',
-        type: 'zone',
+        description: 'Phase-shifting bolts that teleport through enemies, hitting from behind',
+        type: 'warpProjectiles',
         tier: 'starter',
-        baseDamage: 60,            // DPS while in zone
-        baseRadius: 75,
-        baseCooldown: 2500,
-        baseDuration: 3000,
+        baseDamage: 90,
+        baseProjectiles: 3,
+        baseCooldown: 1400,
+        baseRange: 350,
+        warpDistance: 80,          // How far they teleport past first target
         maxLevel: 8,
         levelBonuses: {
-            damage: 25,            // Level 8: 235 damage/tick
-            radius: 12,            // Level 8: 159 radius
-            duration: 400          // Level 8: 5800ms duration
+            damage: 35,            // Level 8: 335 damage
+            projectiles: 1,        // Level 8: 10 projectiles
+            cooldown: -70          // Level 8: 910ms
         },
-        slowAmount: 0.4,           // 40% slow
-        color: '#8844ff'
+        color: '#aa44ff',
+        dps: 193
     },
-    gravityWave: {
-        name: 'Gravity Wave',
-        icon: '🌊',
-        description: 'Launches seeking gravity distortions at nearby enemies',
-        type: 'gravityWave',
+    
+    ionTrail: {
+        name: 'Ion Trail',
+        icon: '⚡',
+        description: 'Leave a damaging energy trail while moving - stop moving, stop damage',
+        type: 'ionTrail',
         tier: 'starter',
-        baseDamage: 120,           // Per projectile
-        baseTargets: 3,            // 3 projectiles
-        baseCooldown: 1300,        // ~0.77 attacks/sec
-        baseRange: 300,
-        maxLevel: 8,
-        levelBonuses: {
-            damage: 40,            // Level 8: 400 damage
-            targets: 1,            // Level 8: 10 targets
-            cooldown: -70,         // Level 8: 810ms
-            range: 35              // Level 8: 545 range
-        },
-        color: '#9944ff',
-        dps: 277                   // Base total DPS (3 targets)
-    },
-    tractorBeam: {
-        name: 'Tractor Beam',
-        icon: '📡',
-        description: 'Continuous beam that damages and pulls enemies closer',
-        type: 'beam',
-        tier: 'starter',
-        baseDamage: 40,            // Per tick (continuous)
-        baseRange: 160,
-        baseCooldown: 100,         // Very fast ticks
+        baseDamage: 40,            // Per tick while enemies in trail
+        trailWidth: 30,
+        trailDuration: 2000,       // Trail lingers 2 seconds
+        baseCooldown: 100,         // Creates trail segments frequently
         maxLevel: 8,
         levelBonuses: {
             damage: 15,            // Level 8: 145 damage/tick
-            range: 20              // Level 8: 300 range
+            trailWidth: 5,         // Level 8: 65 width
+            trailDuration: 200     // Level 8: 3400ms duration
         },
-        pullStrength: 80,
-        color: '#44ff44',
-        dps: 400                   // High sustained DPS
-    },
-    droneSwarm: {
-        name: 'Drone Swarm',
-        icon: '🤖',
-        description: 'Deploy autonomous drones that seek and attack enemies',
-        type: 'minion',
-        tier: 'starter',
-        baseDamage: 70,            // Per drone attack
-        baseDrones: 3,
-        baseCooldown: 4000,        // Spawn interval
-        droneDuration: 8000,
-        maxLevel: 8,
-        levelBonuses: {
-            damage: 30,            // Level 8: 280 damage
-            drones: 1,             // Level 8: 10 drones
-            cooldown: -200         // Level 8: 2600ms spawn
-        },
-        color: '#aaaaaa'
+        color: '#00ffff',
+        dps: 400                   // High if constantly moving
     },
     
-    // ===== UNLOCKABLE WEAPONS =====
-    phaseShift: {
-        name: 'Phase Shift',
-        icon: '👻',
-        description: 'Phase through reality - invulnerable with damage on re-entry',
-        type: 'defensive',
-        tier: 'rare',
-        baseDamage: 180,           // AOE on exit
-        baseDuration: 600,
-        baseCooldown: 8000,
-        baseRadius: 80,
+    probeSwarm: {
+        name: 'Probe Swarm',
+        icon: '🛸',
+        description: 'Deploy probes that orbit you, then swarm and detonate on enemies',
+        type: 'probeSwarm',
+        tier: 'starter',
+        baseDamage: 120,           // Per probe explosion
+        baseProbes: 4,             // Probes deployed per wave
+        baseCooldown: 3500,
+        orbitTime: 2000,           // Orbit for 2 seconds before attacking
         maxLevel: 8,
         levelBonuses: {
-            damage: 60,            // Level 8: 600 damage
-            duration: 100,         // Level 8: 1300ms invuln
-            cooldown: -400,        // Level 8: 5200ms CD
-            radius: 15             // Level 8: 185 radius
+            damage: 45,            // Level 8: 435 damage
+            probes: 1,             // Level 8: 11 probes
+            cooldown: -200         // Level 8: 2100ms
+        },
+        color: '#88ffaa',
+        dps: 137
+    },
+    
+    // ===== UNCOMMON WEAPONS =====
+    // Mid-tier with interesting mechanics
+    
+    cropCircle: {
+        name: 'Crop Circle',
+        icon: '🌾',
+        description: 'Create expanding rings - enemies at the edge take TRIPLE damage',
+        type: 'cropCircle',
+        tier: 'uncommon',
+        baseDamage: 60,            // Center damage
+        edgeDamageMultiplier: 3.0, // 3x at edge
+        baseRadius: 120,
+        baseCooldown: 2800,
+        expandTime: 800,           // Time to reach full size
+        maxLevel: 8,
+        levelBonuses: {
+            damage: 25,            // Level 8: 235 center, 705 edge
+            radius: 20,            // Level 8: 260 radius
+            cooldown: -150         // Level 8: 1750ms
+        },
+        color: '#aaff00'
+    },
+    
+    cattleMutilator: {
+        name: 'Cattle Mutilator',
+        icon: '🐄',
+        description: 'Mark a random enemy - killing it drops health and pulls all XP to you',
+        type: 'cattleMutilator',
+        tier: 'uncommon',
+        baseDamage: 0,             // No direct damage
+        markDuration: 8000,        // 8 seconds to kill target
+        healthDropAmount: 15,      // Health dropped on kill
+        xpPullRadius: 500,         // Pull XP from this radius
+        baseCooldown: 10000,
+        maxLevel: 8,
+        levelBonuses: {
+            markDuration: 1000,    // Level 8: 15 seconds
+            healthDrop: 5,         // Level 8: 50 health
+            xpPullRadius: 100,     // Level 8: 1200 radius
+            cooldown: -600         // Level 8: 5800ms
+        },
+        color: '#ff4488'
+    },
+    
+    menInBlack: {
+        name: 'Men in Black',
+        icon: '🕴️',
+        description: 'Spawn MIB agents that erase weak enemies and deal % damage to strong ones',
+        type: 'menInBlack',
+        tier: 'uncommon',
+        baseDamage: 100,           // Flat damage to strong enemies
+        percentDamage: 0.15,       // 15% current HP damage
+        executeThreshold: 0.2,     // Instakill enemies below 20% HP
+        baseAgents: 2,
+        agentDuration: 5000,
+        baseCooldown: 6000,
+        maxLevel: 8,
+        levelBonuses: {
+            damage: 40,            // Level 8: 380 damage
+            percentDamage: 0.02,   // Level 8: 29% HP damage
+            agents: 1,             // Level 8: 9 agents
+            cooldown: -300         // Level 8: 3900ms
+        },
+        color: '#222222'
+    },
+    
+    radarJammer: {
+        name: 'Radar Jammer',
+        icon: '📡',
+        description: 'Confuse enemies in radius - they attack each other for 3 seconds',
+        type: 'radarJammer',
+        tier: 'uncommon',
+        baseDamage: 0,             // Enemies damage each other
+        baseRadius: 100,
+        confuseDuration: 3000,
+        baseCooldown: 12000,
+        maxLevel: 8,
+        levelBonuses: {
+            radius: 20,            // Level 8: 240 radius
+            confuseDuration: 300,  // Level 8: 5100ms confusion
+            cooldown: -700         // Level 8: 7100ms
+        },
+        color: '#ffaa00'
+    },
+    
+    // ===== RARE WEAPONS =====
+    // Powerful with significant risk/reward
+    
+    singularityEngine: {
+        name: 'Singularity Engine',
+        icon: '⚫',
+        description: 'HOLD STILL to charge a devastating black hole - moving cancels charge!',
+        type: 'singularityEngine',
+        tier: 'rare',
+        baseDamage: 500,           // Massive damage
+        chargeTime: 2500,          // Must stand still 2.5 seconds
+        baseRadius: 150,
+        pullStrength: 200,         // Pulls enemies in
+        baseCooldown: 15000,
+        maxLevel: 8,
+        levelBonuses: {
+            damage: 150,           // Level 8: 1550 damage
+            chargeTime: -150,      // Level 8: 1450ms charge
+            radius: 25,            // Level 8: 325 radius
+            cooldown: -800         // Level 8: 9400ms
+        },
+        color: '#440088'
+    },
+    
+    timelineSplice: {
+        name: 'Timeline Splice',
+        icon: '⏰',
+        description: 'Create a time echo that replays your last 4 seconds of movement and attacks',
+        type: 'timelineSplice',
+        tier: 'rare',
+        baseDamage: 0,             // Echo deals 80% of your weapon damage
+        echoDamagePercent: 0.8,
+        echoDelay: 1500,           // Echo starts 1.5 seconds behind you
+        echoDuration: 4000,        // Replays 4 seconds
+        baseCooldown: 20000,
+        maxLevel: 8,
+        levelBonuses: {
+            echoDamagePercent: 0.05, // Level 8: 115% damage
+            echoDuration: 500,     // Level 8: 7.5 seconds
+            cooldown: -1000        // Level 8: 13000ms
+        },
+        color: '#00ffff'
+    },
+    
+    closeEncounter: {
+        name: 'Close Encounter',
+        icon: '👁️',
+        description: 'Enemies that touch you are ABDUCTED - removed from play, grants bonus XP',
+        type: 'closeEncounter',
+        tier: 'rare',
+        baseDamage: 9999,          // Instakill on contact
+        abductRadius: 25,          // Very close range
+        xpBonus: 2.0,              // 2x XP from abducted enemies
+        maxAbductsPerSecond: 3,    // Rate limit
+        baseCooldown: 100,         // Always checking
+        maxLevel: 8,
+        levelBonuses: {
+            abductRadius: 5,       // Level 8: 60 radius
+            xpBonus: 0.25,         // Level 8: 3.75x XP
+            maxAbducts: 1          // Level 8: 10 per second
         },
         color: '#ffffff'
     },
-    timeDilation: {
-        name: 'Time Dilation',
-        icon: '⏳',
-        description: 'Distort time in a large radius - enemies crawl',
-        type: 'utility',
-        tier: 'rare',
-        baseRadius: 180,
-        baseDuration: 3500,
-        baseCooldown: 14000,
-        slowAmount: 0.3,           // 70% slow
-        maxLevel: 8,
-        levelBonuses: {
-            radius: 30,            // Level 8: 390 radius
-            duration: 400,         // Level 8: 6300ms duration
-            cooldown: -600         // Level 8: 9800ms CD
-        },
-        color: '#44ccff'
-    },
-    dimensionalRift: {
-        name: 'Dimensional Rift',
-        icon: '🌌',
-        description: 'Tear reality - enemies passing through take massive damage',
-        type: 'zone',
-        tier: 'rare',
-        baseDamage: 150,           // Per tick while in rift
-        baseRadius: 90,
-        baseDuration: 4500,
-        baseCooldown: 9000,
-        maxLevel: 8,
-        levelBonuses: {
-            damage: 50,            // Level 8: 500 damage
-            radius: 18,            // Level 8: 216 radius
-            duration: 500          // Level 8: 8000ms duration
-        },
-        color: '#9944ff'
-    },
-    energyOrbit: {
-        name: 'Energy Orbit',
-        icon: '💫',
-        description: 'Orbiting plasma spheres that damage enemies on contact',
-        type: 'orbit',
-        tier: 'uncommon',
-        baseDamage: 80,            // Per orb hit
-        baseOrbs: 2,
-        baseSpeed: 3.5,            // Rotation speed
-        orbitRadius: 70,
-        maxLevel: 8,
-        levelBonuses: {
-            damage: 35,            // Level 8: 325 damage
-            orbs: 1                // Level 8: 9 orbs
-        },
-        color: '#ffff44'
-    },
+    
+    // ===== LEGACY WEAPONS (kept for compatibility) =====
+    
     chainLightning: {
         name: 'Chain Lightning',
         icon: '⛈',
         description: 'Arcing electricity that jumps between nearby enemies',
         type: 'chain',
         tier: 'uncommon',
-        baseDamage: 110,           // Initial hit
-        baseChains: 3,             // Jumps to 3 more enemies
-        chainDamageDecay: 0.8,     // 80% damage per jump
+        baseDamage: 110,
+        baseChains: 3,
+        chainDamageDecay: 0.8,
         baseCooldown: 2200,
         chainRange: 150,
         maxLevel: 8,
         levelBonuses: {
-            damage: 45,            // Level 8: 425 damage
-            chains: 1,             // Level 8: 10 chains
-            cooldown: -120         // Level 8: 1360ms
+            damage: 45,
+            chains: 1,
+            cooldown: -120
         },
         color: '#88ccff'
     },
-    // New weapons for variety
-    plasmaLance: {
-        name: 'Plasma Lance',
-        icon: '🔥',
-        description: 'Piercing beam of superheated plasma',
-        type: 'piercing',
+    
+    energyOrbit: {
+        name: 'Energy Orbit',
+        icon: '💫',
+        description: 'Orbiting plasma spheres that damage enemies on contact',
+        type: 'orbit',
         tier: 'uncommon',
-        baseDamage: 200,
-        basePierce: 3,
-        baseCooldown: 1800,
-        baseRange: 400,
+        baseDamage: 80,
+        baseOrbs: 2,
+        baseSpeed: 3.5,
+        orbitRadius: 70,
         maxLevel: 8,
         levelBonuses: {
-            damage: 65,
-            pierce: 1,
-            cooldown: -100
+            damage: 35,
+            orbs: 1
         },
-        color: '#ff4400'
-    },
-    vortexMine: {
-        name: 'Vortex Mine',
-        icon: '💣',
-        description: 'Deploy mines that detonate when enemies approach',
-        type: 'trap',
-        tier: 'uncommon',
-        baseDamage: 250,
-        baseMines: 2,
-        baseRadius: 100,
-        baseCooldown: 5000,
-        maxLevel: 8,
-        levelBonuses: {
-            damage: 80,
-            mines: 1,
-            radius: 15
-        },
-        color: '#ff8800'
+        color: '#ffff44'
     }
 };
 
